@@ -104,6 +104,16 @@ export class TallyService {
     });
   }
 
+  static formatDAOList(organizations: any[]): string {
+    if (!organizations || organizations.length === 0) {
+      return 'No DAOs found.';
+    }
+
+    return organizations
+      .map(org => `- ${org.name} (${org.slug})\n  Members: ${org.memberCount || 'N/A'}\n  Proposals: ${org.proposalCount || 'N/A'}`)
+      .join('\n');
+  }
+
   async getAddressProposals(input: AddressProposalsInput): Promise<AddressProposalsResponse> {
     return getAddressProposals(this.client, input);
   }
