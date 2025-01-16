@@ -1,12 +1,12 @@
 DAO-related Tools:
-getDAO - Fetch details of a specific DAO by slug
+partial - getDAO - Fetch details of a specific DAO by slug
 DONE - listDAOs - List DAOs with pagination and sorting options
 Proposal-related Tools:
-listProposals - List proposals for a DAO
-getProposal - Get detailed information about a specific proposal
-getProposalVoters - Get list of voters for a proposal
-getProposalTimeline - Get timeline of events for a proposal
-getProposalSecurityAnalysis - Get security analysis of a proposal
+partial -listProposals - List proposals for a DAO
+partial - getProposal - Get detailed information about a specific proposal
+partial -getProposalVoters - Get list of voters for a proposal
+partial - getProposalTimeline - Get timeline of events for a proposal
+partial - getProposalSecurityAnalysis - Get security analysis of a proposal
 Address-related Tools:
 getAddressProposals - Get proposals associated with an address
 getAddressDAOProposals - Get DAO-specific proposals for an address
