@@ -9,6 +9,7 @@ import { getProposalTimeline } from './proposals/getProposalTimeline.js';
 import { getProposalSecurityAnalysis } from './proposals/getProposalSecurityAnalysis.js';
 import { getAddressProposals } from './addresses/getAddressProposals.js';
 import { getAddressDAOProposals } from './addresses/getAddressDAOProposals.js';
+import { getAddressVotes } from './addresses/getAddressVotes.js';
 import type { 
   Organization,
   OrganizationsResponse,
@@ -39,6 +40,8 @@ import type {
   AddressProposalsResponse,
   AddressDAOProposalsInput,
   AddressDAOProposalsResponse,
+  AddressVotesInput,
+  AddressVotesResponse,
 } from './addresses/addresses.types.js';
 
 export interface TallyServiceConfig {
@@ -111,6 +114,16 @@ export class TallyService {
       throw new Error('Address is required');
     }
     return getAddressDAOProposals(this.client, input);
+  }
+
+  async getAddressVotes(input: AddressVotesInput): Promise<AddressVotesResponse> {
+    if (!input.address) {
+      throw new Error('address is required');
+    }
+    if (!input.organizationSlug) {
+      throw new Error('organizationSlug is required');
+    }
+    return getAddressVotes(this.client, input);
   }
 
   static formatProposal(proposal: any): string {
