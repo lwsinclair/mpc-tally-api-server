@@ -10,6 +10,11 @@ export async function getAddressGovernances(
     throw new Error('Address is required');
   }
 
+  // Validate address format
+  if (!/^0x[a-fA-F0-9]{40}$/.test(input.address)) {
+    throw new Error('Failed to fetch address governances: Invalid address format');
+  }
+
   try {
     const accountId = `eip155:1:${input.address.toLowerCase()}`;
     const response = await client.request<AddressGovernancesResponse>(
@@ -20,11 +25,24 @@ export async function getAddressGovernances(
     );
 
     if (!response?.account?.delegatedGovernors) {
-      throw new Error('Failed to fetch address governances');
+      // Return empty response if no governances found
+      return {
+        account: {
+          delegatedGovernors: []
+        }
+      };
     }
 
     return response;
   } catch (error) {
+    // If we get a 422 error for a valid address, it means no governances found
+    if (error.response?.status === 422) {
+      return {
+        account: {
+          delegatedGovernors: []
+        }
+      };
+    }
     throw new Error(`Failed to fetch address governances: ${error.message}`);
   }
 } 
