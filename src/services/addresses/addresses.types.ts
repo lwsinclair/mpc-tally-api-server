@@ -136,4 +136,14 @@ export interface AddressAccount {
 export interface AddressMetadataResponse {
   address: string;
   accounts: AddressAccount[];
+}
+
+export interface AddressSafesInput {
+  address: string;
+}
+
+export interface AddressSafesResponse {
+  account: {
+    safes: string[];
+  };
 } 

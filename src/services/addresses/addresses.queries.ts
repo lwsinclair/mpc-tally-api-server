@@ -193,4 +193,12 @@ export const GET_ADDRESS_METADATA_QUERY = gql`
       }
     }
   }
+`;
+
+export const GET_ADDRESS_SAFES_QUERY = gql`
+  query GetAddressSafes($accountId: AccountID!) {
+    account(id: $accountId) {
+      safes
+    }
+  }
 `; 
