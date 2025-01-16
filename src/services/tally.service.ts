@@ -1,102 +1,33 @@
 import { GraphQLClient } from 'graphql-request';
-import { getAddressProposals } from './addresses/getAddressProposals.js';
-import { getAddressDAOProposals } from './addresses/getAddressDAOProposals.js';
-import { getAddressVotes } from './addresses/getAddressVotes.js';
-import { getAddressCreatedProposals } from './addresses/getAddressCreatedProposals.js';
-import { getAddressMetadata } from './addresses/getAddressMetadata.js';
-import { getAddressSafes } from './addresses/getAddressSafes.js';
-import { getAddressGovernances } from './addresses/getAddressGovernances.js';
-import { getAddressReceivedDelegations } from './addresses/getAddressReceivedDelegations.js';
-import { getDelegateStatement } from './delegates/getDelegateStatement.js';
-import { listDelegates } from './delegates/listDelegates.js';
-import { ListDelegatesInput } from './delegates/delegates.types.js';
-import { getProposalVoters } from './proposals/getProposalVoters.js';
-import { GetProposalVotersInput, ProposalVotersResponse } from './proposals/getProposalVoters.types.js';
 import { listDAOs } from './organizations/listDAOs.js';
-import { ListDAOsParams, OrganizationsResponse } from './organizations/organizations.types.js';
-import {
-  AddressProposalsInput,
-  AddressProposalsResponse,
-  AddressDAOProposalsInput,
-  AddressDAOProposalsResponse,
-  AddressVotesInput,
-  AddressVotesResponse,
-  AddressCreatedProposalsInput,
-  AddressCreatedProposalsResponse,
-  AddressMetadataInput,
-  AddressMetadataResponse,
-  AddressSafesInput,
-  AddressSafesResponse,
-  AddressGovernancesInput,
-  AddressGovernancesResponse
-} from './addresses/addresses.types.js';
-import { getProposalTimeline } from './proposals/getProposalTimeline.js';
-import { GetProposalTimelineInput, ProposalTimelineResponse } from './proposals/getProposalTimeline.types.js';
-import { getProposalSecurityAnalysis } from './proposals/getProposalSecurityAnalysis.js';
-import { GetProposalSecurityAnalysisInput, ProposalSecurityAnalysisResponse } from './proposals/getProposalSecurityAnalysis.types.js';
 import { getDAO } from './organizations/getDAO.js';
-import { Organization } from './organizations/organizations.types.js';
+import { listDelegates } from './delegates/listDelegates.js';
+import { listProposals } from './proposals/listProposals.js';
+import { getProposal } from './proposals/getProposal.js';
+import type { 
+  Organization,
+  OrganizationsResponse,
+  ListDAOsParams,
+} from './organizations/organizations.types.js';
+import type { Delegate } from './delegates/delegates.types.js';
+import type { Delegation, GetDelegatorsParams } from './delegators/delegators.types.js';
+import type { 
+  ProposalsInput,
+  ProposalsResponse,
+  ProposalInput,
+  ProposalDetailsResponse,
+} from './proposals/index.js';
 
 export interface TallyServiceConfig {
   apiKey: string;
-}
-
-export interface AddressReceivedDelegationsInput {
-  address: string;
-  organizationSlug?: string;
-  governorId?: string;
-  limit?: number;
-  sortBy?: 'votes';
-  isDescending?: boolean;
-}
-
-export interface AddressReceivedDelegationsOutput {
-  nodes: Array<{
-    id: string;
-    votes: string;
-    delegator: {
-      id: string;
-      address: string;
-    };
-  }>;
-  pageInfo: {
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-    startCursor: string | null;
-    endCursor: string | null;
-  };
-  totalCount: number;
-}
-
-export type DelegateStatementInput = {
-  address: string;
-} & (
-  | { governorId: string; organizationSlug?: never }
-  | { organizationSlug: string; governorId?: never }
-);
-
-export interface DelegateStatement {
-  id: string;
-  address: string;
-  statement: string;
-  statementSummary: string;
-  isSeekingDelegation: boolean;
-  issues: Array<{
-    id: string;
-    name: string;
-  }>;
-  governor?: {
-    id: string;
-    name: string;
-    type: string;
-  };
+  baseUrl?: string;
 }
 
 export class TallyService {
   private client: GraphQLClient;
 
   constructor(config: TallyServiceConfig) {
-    this.client = new GraphQLClient('https://api.tally.xyz/query', {
+    this.client = new GraphQLClient(config.baseUrl || 'https://api.tally.xyz/query', {
       headers: {
         'Content-Type': 'application/json',
         'api-key': config.apiKey,
@@ -104,94 +35,8 @@ export class TallyService {
     });
   }
 
-  static formatDAOList(organizations: any[]): string {
-    if (!organizations || organizations.length === 0) {
-      return 'No DAOs found.';
-    }
-
-    return organizations
-      .map(org => {
-        const metadata = org.metadata || {};
-        
-        return [
-          `- ${org.name} (${org.slug})`,
-          `  ID: ${org.id}`,
-          `  Chain IDs: ${org.chainIds?.join(', ') || 'N/A'}`,
-          `  Token IDs: ${org.tokenIds?.join(', ') || 'N/A'}`,
-          `  Governor IDs: ${org.governorIds?.join(', ') || 'N/A'}`,
-          `  Metadata:`,
-          `    Description: ${metadata.description || 'N/A'}`,
-          `    Icon: ${metadata.icon || 'N/A'}`,
-          `  Stats:`,
-          `    Has Active Proposals: ${org.hasActiveProposals ? 'Yes' : 'No'}`,
-          `    Proposals Count: ${org.proposalsCount || 'N/A'}`,
-          `    Delegates Count: ${org.delegatesCount || 'N/A'}`,
-          `    Delegates Votes Count: ${org.delegatesVotesCount || 'N/A'}`,
-          `    Token Owners Count: ${org.tokenOwnersCount || 'N/A'}`
-        ].join('\n');
-      })
-      .join('\n\n');
-  }
-
-  async getAddressProposals(input: AddressProposalsInput): Promise<AddressProposalsResponse> {
-    return getAddressProposals(this.client, input);
-  }
-
-  async getAddressDAOProposals(input: AddressDAOProposalsInput): Promise<AddressDAOProposalsResponse> {
-    return getAddressDAOProposals(this.client, input);
-  }
-
-  async getAddressVotes(input: AddressVotesInput): Promise<AddressVotesResponse> {
-    return getAddressVotes(this.client, input);
-  }
-
-  async getAddressCreatedProposals(input: AddressCreatedProposalsInput): Promise<AddressCreatedProposalsResponse> {
-    return getAddressCreatedProposals(this.client, input);
-  }
-
-  async getAddressMetadata(input: AddressMetadataInput): Promise<AddressMetadataResponse> {
-    return getAddressMetadata(this.client, input);
-  }
-
-  async getAddressSafes(input: AddressSafesInput): Promise<AddressSafesResponse> {
-    return getAddressSafes(this.client, input);
-  }
-
-  async getAddressGovernances(input: AddressGovernancesInput): Promise<AddressGovernancesResponse> {
-    return getAddressGovernances(this.client, input);
-  }
-
-  async getAddressReceivedDelegations(input: AddressReceivedDelegationsInput): Promise<AddressReceivedDelegationsOutput> {
-    return getAddressReceivedDelegations(this.client, input);
-  }
-
-  async getDelegateStatement(input: DelegateStatementInput): Promise<DelegateStatement | null> {
-    return getDelegateStatement(this.client, input);
-  }
-
-  async getProposalVoters(input: GetProposalVotersInput): Promise<ProposalVotersResponse> {
-    if (!input.proposalId) {
-      throw new Error('proposalId is required');
-    }
-    return getProposalVoters(this.client, input);
-  }
-
-  async getProposalTimeline(input: GetProposalTimelineInput): Promise<ProposalTimelineResponse> {
-    if (!input.proposalId) {
-      throw new Error('proposalId is required');
-    }
-    return getProposalTimeline(this.client, input);
-  }
-
-  async getProposalSecurityAnalysis(input: GetProposalSecurityAnalysisInput): Promise<ProposalSecurityAnalysisResponse> {
-    if (!input.proposalId) {
-      throw new Error('proposalId is required');
-    }
-    return getProposalSecurityAnalysis(this.client, input);
-  }
-
-  async listDelegates(input: ListDelegatesInput) {
-    return listDelegates(this.client, input);
+  async listProposals(input: ProposalsInput & { organizationSlug?: string }): Promise<ProposalsResponse> {
+    return listProposals(this.client, input);
   }
 
   async getDAO(slug: string): Promise<Organization> {
@@ -200,5 +45,45 @@ export class TallyService {
 
   async listDAOs(params: ListDAOsParams = {}): Promise<OrganizationsResponse> {
     return listDAOs(this.client, params);
+  }
+
+  async listDelegates(input: any) {
+    return listDelegates(this.client, input);
+  }
+
+  async getProposal(input: ProposalInput): Promise<ProposalDetailsResponse> {
+    return getProposal(this.client, input);
+  }
+
+  static formatProposal(proposal: any): string {
+    return `Proposal: ${proposal.metadata.title}
+ID: ${proposal.id}
+Status: ${proposal.status}
+Created: ${new Date(proposal.createdAt).toLocaleString()}
+Description: ${proposal.metadata.description}
+Governor: ${proposal.governor.name}
+Vote Stats:
+${proposal.voteStats.map((stat: any) => 
+  `  ${stat.type}: ${stat.percent.toFixed(2)}% (${stat.votesCount} votes from ${stat.votersCount} voters)`
+).join('\n')}`;
+  }
+
+  static formatProposalsList(proposals: ProposalsResponse['proposals']['nodes']): string {
+    return `Found ${proposals.length} proposals:\n\n` +
+      proposals.map(proposal =>
+        `${proposal.metadata.title}\n` +
+        `Tally ID: ${proposal.id}\n` +
+        `Onchain ID: ${proposal.onchainId}\n` +
+        `Status: ${proposal.status}\n` +
+        `Created: ${new Date(proposal.createdAt).toLocaleString()}\n` +
+        `Quorum: ${proposal.quorum}\n` +
+        `Organization: ${proposal.governor.organization.name} (${proposal.governor.organization.slug})\n` +
+        `Governor: ${proposal.governor.name}\n` +
+        `Vote Stats:\n${proposal.voteStats.map(stat =>
+          `  ${stat.type}: ${stat.percent.toFixed(2)}% (${stat.votesCount} votes from ${stat.votersCount} voters)`
+        ).join('\n')}\n` +
+        `Description: ${proposal.metadata.description.slice(0, 200)}${proposal.metadata.description.length > 200 ? '...' : ''}\n` +
+        '---'
+      ).join('\n\n');
   }
 } 
