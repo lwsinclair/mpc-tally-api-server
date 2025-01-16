@@ -36,10 +36,54 @@ describe('TallyService - DAOs List', () => {
         expect(result.organizations.nodes.length).toBeLessThanOrEqual(3);
 
         const firstDao = result.organizations.nodes[0];
+        
+        // Basic Information
         expect(firstDao).toHaveProperty('id');
         expect(firstDao).toHaveProperty('name');
         expect(firstDao).toHaveProperty('slug');
         expect(firstDao).toHaveProperty('chainIds');
+        expect(firstDao).toHaveProperty('tokenIds');
+        expect(firstDao).toHaveProperty('governorIds');
+        
+        // Metadata
+        expect(firstDao).toHaveProperty('metadata');
+        expect(firstDao.metadata).toHaveProperty('color');
+        expect(firstDao.metadata).toHaveProperty('description');
+        expect(firstDao.metadata).toHaveProperty('icon');
+        
+        // Creator
+        expect(firstDao).toHaveProperty('creator');
+        expect(firstDao.creator).toHaveProperty('id');
+        expect(firstDao.creator).toHaveProperty('address');
+        expect(firstDao.creator).toHaveProperty('ens');
+        expect(firstDao.creator).toHaveProperty('twitter');
+        expect(firstDao.creator).toHaveProperty('name');
+        expect(firstDao.creator).toHaveProperty('bio');
+        expect(firstDao.creator).toHaveProperty('picture');
+        expect(firstDao.creator).toHaveProperty('safes');
+        expect(firstDao.creator).toHaveProperty('type');
+        expect(firstDao.creator).toHaveProperty('votes');
+        expect(firstDao.creator).toHaveProperty('proposalsCreatedCount');
+        
+        // Stats
+        expect(firstDao).toHaveProperty('hasActiveProposals');
+        expect(firstDao).toHaveProperty('proposalsCount');
+        expect(firstDao).toHaveProperty('delegatesCount');
+        expect(firstDao).toHaveProperty('delegatesVotesCount');
+        expect(firstDao).toHaveProperty('tokenOwnersCount');
+        
+        // Endorsement Service
+        expect(firstDao).toHaveProperty('endorsementService');
+        if (firstDao.endorsementService) {
+          expect(firstDao.endorsementService).toHaveProperty('id');
+          expect(firstDao.endorsementService).toHaveProperty('competencyFields');
+          if (firstDao.endorsementService.competencyFields?.length > 0) {
+            const field = firstDao.endorsementService.competencyFields[0];
+            expect(field).toHaveProperty('id');
+            expect(field).toHaveProperty('name');
+            expect(field).toHaveProperty('description');
+          }
+        }
       } catch (error) {
         if (String(error).includes('429')) {
           console.log('Rate limit hit, marking test as passed');
