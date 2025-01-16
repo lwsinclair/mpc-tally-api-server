@@ -109,17 +109,9 @@ export class TallyService {
       return 'No DAOs found.';
     }
 
-    interface CompetencyField {
-      id: string;
-      name: string;
-      description: string;
-    }
-
     return organizations
       .map(org => {
         const metadata = org.metadata || {};
-        const creator = org.creator || {};
-        const endorsementService = org.endorsementService || {};
         
         return [
           `- ${org.name} (${org.slug})`,
@@ -128,32 +120,14 @@ export class TallyService {
           `  Token IDs: ${org.tokenIds?.join(', ') || 'N/A'}`,
           `  Governor IDs: ${org.governorIds?.join(', ') || 'N/A'}`,
           `  Metadata:`,
-          `    Color: ${metadata.color || 'N/A'}`,
           `    Description: ${metadata.description || 'N/A'}`,
           `    Icon: ${metadata.icon || 'N/A'}`,
-          `  Creator:`,
-          `    ID: ${creator.id || 'N/A'}`,
-          `    Address: ${creator.address || 'N/A'}`,
-          `    ENS: ${creator.ens || 'N/A'}`,
-          `    Twitter: ${creator.twitter || 'N/A'}`,
-          `    Name: ${creator.name || 'N/A'}`,
-          `    Bio: ${creator.bio || 'N/A'}`,
-          `    Picture: ${creator.picture || 'N/A'}`,
-          `    Safes: ${creator.safes?.join(', ') || 'N/A'}`,
-          `    Type: ${creator.type || 'N/A'}`,
-          `    Votes: ${creator.votes || 'N/A'}`,
-          `    Proposals Created: ${creator.proposalsCreatedCount || 'N/A'}`,
           `  Stats:`,
           `    Has Active Proposals: ${org.hasActiveProposals ? 'Yes' : 'No'}`,
           `    Proposals Count: ${org.proposalsCount || 'N/A'}`,
           `    Delegates Count: ${org.delegatesCount || 'N/A'}`,
           `    Delegates Votes Count: ${org.delegatesVotesCount || 'N/A'}`,
-          `    Token Owners Count: ${org.tokenOwnersCount || 'N/A'}`,
-          `  Endorsement Service:`,
-          `    ID: ${endorsementService.id || 'N/A'}`,
-          `    Competency Fields: ${endorsementService.competencyFields?.map((field: CompetencyField) => 
-              `\n      - ${field.name}: ${field.description} (ID: ${field.id})`
-            ).join('') || 'N/A'}`
+          `    Token Owners Count: ${org.tokenOwnersCount || 'N/A'}`
         ].join('\n');
       })
       .join('\n\n');

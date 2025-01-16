@@ -12,36 +12,14 @@ export const LIST_DAOS_QUERY = gql`
           tokenIds
           governorIds
           metadata {
-            color
             description
             icon
-          }
-          creator {
-            id
-            address
-            ens
-            twitter
-            name
-            bio
-            picture
-            safes
-            type
-            votes
-            proposalsCreatedCount
           }
           hasActiveProposals
           proposalsCount
           delegatesCount
           delegatesVotesCount
           tokenOwnersCount
-          endorsementService {
-            id
-            competencyFields {
-              id
-              name
-              description
-            }
-          }
         }
       }
       pageInfo {
