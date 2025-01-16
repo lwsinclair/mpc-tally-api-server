@@ -95,6 +95,11 @@ export async function listDelegates(
         globalRateLimiter.updateFromHeaders(response.headers as Record<string, string>);
       }
 
+      // Check if we got any delegates
+      if (!response.delegates?.nodes?.length) {
+        throw new ValidationError('No delegates found for the given organization');
+      }
+
       return {
         delegates: response.delegates.nodes,
         pageInfo: response.delegates.pageInfo,

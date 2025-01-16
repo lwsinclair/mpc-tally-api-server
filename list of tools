@@ -17,7 +17,7 @@ getAddressSafes - Get safes associated with an address
 partial - getAddressGovernances - Get governance participation info for an address
 partial getAddressReceivedDelegations - Get delegations received by an address
 Delegate-related Tools:
-listDelegates - List delegates for a DAO
+partial - listDelegates - List delegates for a DAO
 getDelegateStatement - Get a delegate's statement
 Utility Tools:
 RateLimiter - Handles API rate limiting
