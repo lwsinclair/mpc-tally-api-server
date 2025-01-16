@@ -146,4 +146,39 @@ export interface AddressSafesResponse {
   account: {
     safes: string[];
   };
+}
+
+export interface AddressGovernancesInput {
+  address: string;
+}
+
+export interface AddressGovernance {
+  id: string;
+  name: string;
+  type: string;
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+    metadata: {
+      icon: string | null;
+    };
+  };
+  stats: {
+    proposalsCount: number;
+    delegatesCount: number;
+    tokenHoldersCount: number;
+  };
+  tokens: Array<{
+    id: string;
+    name: string;
+    symbol: string;
+    decimals: number;
+  }>;
+}
+
+export interface AddressGovernancesResponse {
+  account: {
+    delegatedGovernors: AddressGovernance[];
+  };
 } 

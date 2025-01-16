@@ -31,6 +31,10 @@ import type { AddressVotesInput, AddressVotesResponse } from './addresses/addres
 import type { AddressCreatedProposalsInput, AddressCreatedProposalsResponse } from './addresses/addresses.types.js';
 import { getAddressSafes } from './addresses/getAddressSafes.js';
 import { AddressSafesInput, AddressSafesResponse } from './addresses/addresses.types.js';
+import { getAddressGovernances } from './addresses/getAddressGovernances.js';
+import { AddressGovernancesInput, AddressGovernancesResponse } from './addresses/addresses.types.js';
+import { getAddressReceivedDelegations } from './addresses/getAddressReceivedDelegations.js';
+import { getDelegateStatement } from './delegates/getDelegateStatement.js';
 
 export interface TallyServiceConfig {
   apiKey: string;
@@ -396,6 +400,31 @@ export class TallyService {
 
   async getAddressSafes(input: AddressSafesInput): Promise<AddressSafesResponse> {
     return getAddressSafes(this.client, input);
+  }
+
+  async getAddressGovernances(input: AddressGovernancesInput): Promise<AddressGovernancesResponse> {
+    return getAddressGovernances(this.client, input);
+  }
+
+  async getAddressReceivedDelegations(input: {
+    address: string;
+    organizationSlug?: string;
+    governorId?: string;
+    limit?: number;
+    afterCursor?: string;
+    beforeCursor?: string;
+    sortBy?: 'id' | 'votes';
+    isDescending?: boolean;
+  }) {
+    return getAddressReceivedDelegations(this.client, input);
+  }
+
+  async getDelegateStatement(input: {
+    address: string;
+    organizationSlug?: string;
+    governorId?: string;
+  }) {
+    return getDelegateStatement(this.client, input);
   }
 
   // Keep the formatting utility functions in the service

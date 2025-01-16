@@ -27,16 +27,18 @@ export async function getAddressVotes(
     });
 
     // Step 3: Get votes for these proposals
-    const response = await client.request(GET_ADDRESS_VOTES_QUERY, {
+    const response = await client.request<{ votes: { nodes: any[]; pageInfo: any } }>(GET_ADDRESS_VOTES_QUERY, {
       input: {
         filters: {
           proposalIds: proposals.proposals.nodes.map(p => p.id),
           voter: input.address
+        },
+        page: {
+          limit: input.limit || 20
         }
       }
     });
 
-    // Transform the response to match our expected types
     return {
       votes: {
         nodes: response.votes?.nodes || [],
@@ -47,6 +49,6 @@ export async function getAddressVotes(
       }
     };
   } catch (error) {
-    throw new Error(`Failed to fetch address votes: ${error.message}`);
+    throw new Error(`Failed to fetch address votes: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 } 

@@ -90,14 +90,23 @@ export const GET_ADDRESS_DAO_PROPOSALS_QUERY = gql`
   }
 `;
 
-const VOTE_FIELDS = gql`
+export const GET_ADDRESS_VOTES_QUERY = gql`
   fragment VoteFields on Vote {
     id
+    type
+    amount
+    reason
+    block {
+      timestamp
+    }
     voter {
       address
+      name
+      ens
     }
     proposal {
       id
+      onchainId
       governor {
         id
         organization {
@@ -106,18 +115,12 @@ const VOTE_FIELDS = gql`
           slug
         }
       }
-    }
-    type
-    amount
-    reason
-    block {
-      timestamp
+      metadata {
+        title
+      }
     }
   }
-`;
 
-export const GET_ADDRESS_VOTES_QUERY = gql`
-  ${VOTE_FIELDS}
   query GetVotes($input: VotesInput!) {
     votes(input: $input) {
       nodes {
@@ -199,6 +202,101 @@ export const GET_ADDRESS_SAFES_QUERY = gql`
   query GetAddressSafes($accountId: AccountID!) {
     account(id: $accountId) {
       safes
+    }
+  }
+`;
+
+export const GET_ADDRESS_GOVERNANCES_QUERY = gql`
+  query GetAddressGovernances($accountId: AccountID!) {
+    account(id: $accountId) {
+      delegatedGovernors {
+        id
+        name
+        type
+        organization {
+          id
+          name
+          slug
+          metadata {
+            icon
+          }
+        }
+        stats {
+          proposalsCount
+          delegatesCount
+          tokenHoldersCount
+        }
+        tokens {
+          id
+          name
+          symbol
+          decimals
+        }
+      }
+    }
+  }
+`;
+
+export const GET_ADDRESS_RECEIVED_DELEGATIONS_QUERY = gql`
+  query GetAddressReceivedDelegations($accountId: AccountID!, $governorId: ID!, $pagination: PaginationInput, $sort: DelegationSort) {
+    account(id: $accountId) {
+      delegationsReceived(governorId: $governorId, pagination: $pagination, sort: $sort) {
+        nodes {
+          id
+          blockNumber
+          blockTimestamp
+          votes
+          delegator {
+            id
+            address
+          }
+          delegate {
+            id
+            address
+          }
+          token {
+            id
+            symbol
+            decimals
+          }
+          governor {
+            id
+            name
+            type
+          }
+        }
+        pageInfo {
+          hasNextPage
+          hasPreviousPage
+          startCursor
+          endCursor
+        }
+        totalCount
+      }
+    }
+  }
+`;
+
+export const GET_DELEGATE_STATEMENT_QUERY = gql`
+  query GetDelegateStatement($accountId: AccountID!, $governorId: ID!) {
+    account(id: $accountId) {
+      delegateStatement(governorId: $governorId) {
+        id
+        address
+        statement
+        statementSummary
+        isSeekingDelegation
+        issues {
+          id
+          name
+        }
+        lastUpdated
+        governor {
+          id
+          name
+          type
+        }
+      }
     }
   }
 `; 
