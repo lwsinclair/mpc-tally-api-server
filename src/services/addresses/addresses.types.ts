@@ -118,4 +118,22 @@ export interface AddressCreatedProposalsResponse {
       lastCursor: string;
     };
   };
+}
+
+export interface AddressMetadataInput {
+  address: string;
+}
+
+export interface AddressAccount {
+  id: string;
+  address: string;
+  ens?: string;
+  name?: string;
+  bio?: string;
+  picture?: string;
+}
+
+export interface AddressMetadataResponse {
+  address: string;
+  accounts: AddressAccount[];
 } 

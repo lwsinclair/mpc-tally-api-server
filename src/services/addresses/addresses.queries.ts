@@ -177,4 +177,20 @@ export const GET_ADDRESS_CREATED_PROPOSALS_QUERY = gql`
       }
     }
   }
+`;
+
+export const GET_ADDRESS_METADATA_QUERY = gql`
+  query GetAddressMetadata($address: Address!) {
+    address(address: $address) {
+      address
+      accounts {
+        id
+        address
+        ens
+        name
+        bio
+        picture
+      }
+    }
+  }
 `; 

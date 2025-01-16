@@ -9,6 +9,8 @@ import { getAddressProposals } from './addresses/getAddressProposals.js';
 import { getAddressDAOProposals } from './addresses/getAddressDAOProposals.js';
 import { getAddressVotes } from './addresses/getAddressVotes.js';
 import { getAddressCreatedProposals } from './addresses/getAddressCreatedProposals.js';
+import { getAddressMetadata } from './addresses/getAddressMetadata.js';
+import { AddressMetadataInput, AddressMetadataResponse } from './addresses/addresses.types.js';
 import type { 
   Organization,
   OrganizationsResponse,
@@ -384,6 +386,10 @@ export class TallyService {
     input: AddressCreatedProposalsInput
   ): Promise<AddressCreatedProposalsResponse> {
     return getAddressCreatedProposals(this.client, input);
+  }
+
+  async getAddressMetadata(input: AddressMetadataInput): Promise<AddressMetadataResponse> {
+    return getAddressMetadata(this.client, input);
   }
 
   // Keep the formatting utility functions in the service
