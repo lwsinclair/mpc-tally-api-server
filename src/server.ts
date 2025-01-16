@@ -316,6 +316,41 @@ export class TallyServer {
             },
           },
         },
+        {
+          name: "get-address-received-delegations",
+          description: "Returns delegations received by an address",
+          inputSchema: {
+            type: "object",
+            required: ["address"],
+            properties: {
+              address: {
+                type: "string",
+                description: "The Ethereum address to get received delegations for (0x format)",
+              },
+              organizationSlug: {
+                type: "string",
+                description: "Filter by organization slug",
+              },
+              governorId: {
+                type: "string",
+                description: "Filter by governor ID",
+              },
+              limit: {
+                type: "number",
+                description: "Maximum number of delegations to return (default: 20, max: 50)",
+              },
+              sortBy: {
+                type: "string",
+                enum: ["votes"],
+                description: "Field to sort by",
+              },
+              isDescending: {
+                type: "boolean",
+                description: "Sort in descending order",
+              },
+            },
+          },
+        },
       ];
 
       return { tools };
@@ -645,6 +680,39 @@ export class TallyServer {
           };
         } catch (error) {
           throw new Error(`Error fetching address created proposals: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+
+      if (name === "get-address-received-delegations") {
+        try {
+          if (typeof args.address !== 'string') {
+            throw new Error('address must be a string');
+          }
+
+          const result = await this.service.getAddressReceivedDelegations({
+            address: args.address,
+            organizationSlug: typeof args.organizationSlug === 'string' ? args.organizationSlug : undefined,
+            governorId: typeof args.governorId === 'string' ? args.governorId : undefined,
+            limit: typeof args.limit === 'number' ? args.limit : undefined,
+            sortBy: typeof args.sortBy === 'string' ? args.sortBy as 'votes' : undefined,
+            isDescending: typeof args.isDescending === 'boolean' ? args.isDescending : undefined,
+          });
+
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text: `Received delegations for ${args.address}:\n\n` +
+                result.nodes.map(node => 
+                  `- From: ${node.delegator.address}${node.delegator.name ? ` (${node.delegator.name})` : ''}\n` +
+                  `  Votes: ${node.votes}\n` +
+                  `  Block: ${node.blockNumber}`
+                ).join('\n\n')
+            }
+          ];
+
+          return { content };
+        } catch (error) {
+          throw new Error(`Error fetching received delegations: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
 
