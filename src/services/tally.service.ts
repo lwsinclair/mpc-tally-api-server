@@ -93,7 +93,8 @@ export class TallyService {
   constructor(config: TallyServiceConfig) {
     this.client = new GraphQLClient('https://api.tally.xyz/query', {
       headers: {
-        'Api-Key': config.apiKey,
+        'Content-Type': 'application/json',
+        'api-key': config.apiKey,
       },
     });
   }
