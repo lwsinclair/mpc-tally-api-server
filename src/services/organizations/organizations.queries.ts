@@ -6,13 +6,42 @@ export const LIST_DAOS_QUERY = gql`
       nodes {
         ... on Organization {
           id
-          name
           slug
+          name
           chainIds
-          proposalsCount
+          tokenIds
+          governorIds
+          metadata {
+            color
+            description
+            icon
+          }
+          creator {
+            id
+            address
+            ens
+            twitter
+            name
+            bio
+            picture
+            safes
+            type
+            votes
+            proposalsCreatedCount
+          }
           hasActiveProposals
-          tokenOwnersCount
+          proposalsCount
           delegatesCount
+          delegatesVotesCount
+          tokenOwnersCount
+          endorsementService {
+            id
+            competencyFields {
+              id
+              name
+              description
+            }
+          }
         }
       }
       pageInfo {
