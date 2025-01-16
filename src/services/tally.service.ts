@@ -5,6 +5,7 @@ import { listDelegates } from './delegates/listDelegates.js';
 import { listProposals } from './proposals/listProposals.js';
 import { getProposal } from './proposals/getProposal.js';
 import { getProposalVoters } from './proposals/getProposalVoters.js';
+import { getProposalTimeline } from './proposals/getProposalTimeline.js';
 import type { 
   Organization,
   OrganizationsResponse,
@@ -22,6 +23,10 @@ import type {
   GetProposalVotersInput,
   ProposalVotersResponse,
 } from './proposals/getProposalVoters.types.js';
+import type {
+  GetProposalTimelineInput,
+  ProposalTimelineResponse,
+} from './proposals/getProposalTimeline.types.js';
 
 export interface TallyServiceConfig {
   apiKey: string;
@@ -65,6 +70,13 @@ export class TallyService {
       throw new Error('proposalId is required');
     }
     return getProposalVoters(this.client, input);
+  }
+
+  async getProposalTimeline(input: GetProposalTimelineInput): Promise<ProposalTimelineResponse> {
+    if (!input.proposalId) {
+      throw new Error('proposalId is required');
+    }
+    return getProposalTimeline(this.client, input);
   }
 
   static formatProposal(proposal: any): string {

@@ -35,6 +35,10 @@ export async function getProposalTimeline(
       if (!response.proposal?.events) {
         return {
           proposal: {
+            id: input.proposalId,
+            onchainId: '',
+            chainId: '',
+            status: '',
             events: []
           }
         };
@@ -56,17 +60,17 @@ export async function getProposalTimeline(
           throw new Error('Rate limit exceeded. Please try again later.');
         }
 
-        // Handle other GraphQL errors
-        if (graphqlError.response?.errors) {
-          const gqlError = graphqlError.response.errors[0];
-          // If the proposal doesn't exist, return empty result
-          if (gqlError.message.includes('not found') || gqlError.message.includes('invalid input')) {
-            return {
-              proposal: {
-                events: []
-              }
-            };
-          }
+        // Handle invalid input (422) or other GraphQL errors
+        if (graphqlError.response?.status === 422 || graphqlError.response?.errors) {
+          return {
+            proposal: {
+              id: input.proposalId,
+              onchainId: '',
+              chainId: '',
+              status: '',
+              events: []
+            }
+          };
         }
       }
       
