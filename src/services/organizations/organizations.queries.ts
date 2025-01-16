@@ -14,6 +14,11 @@ export const LIST_DAOS_QUERY = gql`
           metadata {
             description
             icon
+            socials {
+              website
+              discord
+              twitter
+            }
           }
           hasActiveProposals
           proposalsCount
@@ -37,9 +42,13 @@ export const GET_DAO_QUERY = gql`
       name
       slug
       chainIds
+      tokenIds
+      governorIds
       proposalsCount
       tokenOwnersCount
       delegatesCount
+      delegatesVotesCount
+      hasActiveProposals
       metadata {
         description
         icon

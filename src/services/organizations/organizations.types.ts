@@ -39,49 +39,27 @@ export interface ListDAOsParams {
 // Response Types
 export interface Organization {
   id: string;
-  slug: string;
   name: string;
+  slug: string;
   chainIds: string[];
-  tokenIds?: string[];
-  governorIds?: string[];
-  metadata?: {
-    description?: string;
-    icon?: string;
-    websiteUrl?: string;
-    twitter?: string;
-    discord?: string;
-    github?: string;
-    termsOfService?: string;
-    governanceUrl?: string;
-    socials?: {
-      website?: string;
-      discord?: string;
-      telegram?: string;
-      twitter?: string;
-      discourse?: string;
-      others?: Array<{
-        label: string;
-        value: string;
-      }>;
-    };
-    karmaName?: string;
+  tokenIds: string[];
+  governorIds: string[];
+  metadata: {
+    description: string;
+    icon: string;
+    socials: {
+      website: string;
+      discord: string;
+      twitter: string;
+    }
   };
-  features?: Array<{
-    name: string;
-    enabled: boolean;
-  }>;
-  hasActiveProposals: boolean;
-  proposalsCount: number;
-  delegatesCount: number;
-  tokenOwnersCount: number;
-  stats?: {
+  stats: {
     proposalsCount: number;
-    activeProposalsCount: number;
-    tokenHoldersCount: number;
-    votersCount: number;
+    tokenOwnersCount: number;
     delegatesCount: number;
-    delegatedVotesCount: string;
-  };
+    delegatesVotesCount: string;
+    hasActiveProposals: boolean;
+  }
 }
 
 export interface PageInfo {
