@@ -133,4 +133,107 @@ export const GET_PROPOSAL_QUERY = gql`
       }
     }
   }
+`;
+
+export const GET_PROPOSAL_VOTERS_QUERY = gql`
+  fragment VoterFields on Vote {
+    id
+    address
+    name
+    timestamp
+    votes
+    reason
+    support
+    voter {
+      id
+      address
+      name
+      ens
+    }
+    proposal {
+      id
+      onchainId
+      governor {
+        id
+        name
+      }
+    }
+  }
+
+  query GetProposalVoters($input: ProposalVotersInput!) {
+    proposalVoters(input: $input) {
+      nodes {
+        ... on Vote {
+          ...VoterFields
+        }
+      }
+      pageInfo {
+        firstCursor
+        lastCursor
+      }
+    }
+  }
+`;
+
+export const GET_PROPOSAL_TIMELINE_QUERY = gql`
+  fragment TimelineEventFields on ProposalEvent {
+    id
+    type
+    timestamp
+    data {
+      ... on ProposalCreatedEvent {
+        title
+        description
+      }
+      ... on ProposalStatusChangedEvent {
+        status
+      }
+      ... on ProposalVoteCastEvent {
+        votes
+        support
+      }
+      ... on ProposalExecutedEvent {
+        txHash
+      }
+    }
+  }
+
+  query GetProposalTimeline($input: ProposalInput!) {
+    proposal(input: $input) {
+      id
+      onchainId
+      chainId
+      status
+      events {
+        ...TimelineEventFields
+      }
+    }
+  }
+`;
+
+export const GET_PROPOSAL_SECURITY_ANALYSIS_QUERY = gql`
+  query ProposalSecurityAnalysis($proposalId: ID!) {
+    proposalSecurityCheck(proposalId: $proposalId) {
+      metadata {
+        metadata {
+          threatAnalysis {
+            actionsData {
+              events {
+                eventType
+                severity
+                description
+              }
+              result
+            }
+            proposerRisk
+          }
+        }
+        simulations {
+          publicURI
+          result
+        }
+      }
+      createdAt
+    }
+  }
 `; 
