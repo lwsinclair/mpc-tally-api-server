@@ -3,13 +3,16 @@ import { DelegateStatement } from '../../types.js';
 import { GraphQLError } from 'graphql';
 import { getDAO } from '../organizations/getDAO.js';
 import { gql } from 'graphql-request';
+import { globalRateLimiter } from '../utils/rateLimiter.js';
+import {
+  TallyAPIError,
+  RateLimitError,
+  ResourceNotFoundError,
+  ValidationError,
+  GraphQLRequestError
+} from '../errors/apiErrors.js';
 
 const MAX_RETRIES = 5;
-const BASE_DELAY = 2000; // 2 seconds
-const MAX_DELAY = 10000; // 10 seconds
-
-// Track last request time
-let lastRequestTime = 0;
 
 const GET_DELEGATE_STATEMENT_QUERY = gql`
   query GetDelegateStatement($address: AccountID!, $governorId: ID!) {
@@ -34,47 +37,13 @@ const GET_DELEGATE_STATEMENT_QUERY = gql`
   }
 `;
 
-interface GetDelegateStatementInput {
+// Use discriminated union for input type
+type GetDelegateStatementInput = {
   address: string;
-  organizationSlug?: string;
-  governorId?: string;
-}
-
-async function waitForRateLimit(): Promise<void> {
-  const now = Date.now();
-  const timeSinceLastRequest = now - lastRequestTime;
-  
-  if (process.env.NODE_ENV === 'test') {
-    console.log('Rate limit check:', {
-      now,
-      lastRequestTime,
-      timeSinceLastRequest,
-      needsDelay: timeSinceLastRequest < BASE_DELAY
-    });
-  }
-
-  // Always wait at least BASE_DELAY between requests
-  if (timeSinceLastRequest < BASE_DELAY) {
-    const waitTime = BASE_DELAY - timeSinceLastRequest;
-    if (process.env.NODE_ENV === 'test') {
-      console.log(`Waiting ${waitTime}ms before next request`);
-    }
-    await new Promise(resolve => setTimeout(resolve, waitTime));
-  }
-
-  lastRequestTime = Date.now();
-  if (process.env.NODE_ENV === 'test') {
-    console.log('Updated lastRequestTime:', lastRequestTime);
-  }
-}
-
-async function exponentialBackoff(retryCount: number): Promise<void> {
-  const delay = Math.min(BASE_DELAY * Math.pow(2, retryCount), MAX_DELAY);
-  if (process.env.NODE_ENV === 'test') {
-    console.log(`Exponential backoff: Waiting ${delay}ms on retry ${retryCount}`);
-  }
-  await new Promise(resolve => setTimeout(resolve, delay));
-}
+} & (
+  | { governorId: string; organizationSlug?: never }
+  | { organizationSlug: string; governorId?: never }
+);
 
 export async function getDelegateStatement(
   client: GraphQLClient,
@@ -86,33 +55,27 @@ export async function getDelegateStatement(
   while (retries < MAX_RETRIES) {
     try {
       if (!input.address) {
-        throw new Error('Address is required');
+        throw new ValidationError('Address is required');
       }
 
-      if (!input.governorId && !input.organizationSlug) {
-        throw new Error('Either governorId or organizationSlug is required');
-      }
+      let governorId: string;
 
-      let governorId: string | undefined;
-
-      if (input.governorId) {
+      if ('governorId' in input && input.governorId) {
         governorId = input.governorId;
-      } else if (input.organizationSlug) {
+      } else if ('organizationSlug' in input && input.organizationSlug) {
         // Wait for rate limit before getDAO request
-        await waitForRateLimit();
+        await globalRateLimiter.waitForRateLimit();
         const dao = await getDAO(client, input.organizationSlug);
         if (!dao.governorIds?.length) {
-          throw new Error('Organization or governor not found');
+          throw new ResourceNotFoundError('Organization or governor', input.organizationSlug);
         }
         governorId = dao.governorIds[0];
-      }
-
-      if (!governorId) {
-        throw new Error('Failed to determine governorId');
+      } else {
+        throw new ValidationError('Either governorId or organizationSlug is required');
       }
 
       // Wait for rate limit before delegate statement request
-      await waitForRateLimit();
+      await globalRateLimiter.waitForRateLimit();
 
       const variables = {
         address: input.address,
@@ -124,6 +87,11 @@ export async function getDelegateStatement(
           delegateStatement: DelegateStatement | null;
         };
       }>(GET_DELEGATE_STATEMENT_QUERY, variables);
+
+      // Update rate limiter with response headers if available
+      if ('headers' in response) {
+        globalRateLimiter.updateFromHeaders(response.headers as Record<string, string>);
+      }
 
       if (!response.account?.delegateStatement) {
         return null;
@@ -139,10 +107,13 @@ export async function getDelegateStatement(
         if (graphqlError.response?.status === 429) {
           retries++;
           if (retries < MAX_RETRIES) {
-            await exponentialBackoff(retries);
+            await globalRateLimiter.exponentialBackoff(retries);
             continue;
           }
-          throw new Error('Rate limit exceeded. Please try again later.');
+          throw new RateLimitError('Rate limit exceeded after retries', {
+            retries,
+            status: graphqlError.response.status
+          });
         }
 
         // Handle other GraphQL errors
@@ -152,12 +123,18 @@ export async function getDelegateStatement(
             return null;
           }
         }
+
+        throw new GraphQLRequestError(
+          `GraphQL error: ${lastError?.message}`,
+          'GetDelegateStatement',
+          variables
+        );
       }
       
       // If we've reached here, it's an unexpected error
-      throw new Error(`Failed to fetch delegate statement: ${lastError?.message}`);
+      throw new TallyAPIError(`Failed to fetch delegate statement: ${lastError?.message}`);
     }
   }
 
-  throw new Error('Maximum retries exceeded. Please try again later.');
+  throw new RateLimitError('Maximum retries exceeded');
 } 
