@@ -24,37 +24,23 @@ export const LIST_DAOS_QUERY = gql`
 `;
 
 export const GET_DAO_QUERY = gql`
-  query OrganizationBySlug($input: OrganizationInput!) {
+  query GetOrganization($input: OrganizationInput!) {
     organization(input: $input) {
       id
       name
       slug
       chainIds
-      governorIds
-      tokenIds
-      hasActiveProposals
       proposalsCount
-      delegatesCount
       tokenOwnersCount
+      delegatesCount
       metadata {
         description
         icon
         socials {
           website
           discord
-          telegram
           twitter
-          discourse
-          others {
-            label
-            value
-          }
         }
-        karmaName
-      }
-      features {
-        name
-        enabled
       }
     }
   }

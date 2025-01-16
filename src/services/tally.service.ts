@@ -8,8 +8,12 @@ import { getAddressSafes } from './addresses/getAddressSafes.js';
 import { getAddressGovernances } from './addresses/getAddressGovernances.js';
 import { getAddressReceivedDelegations } from './addresses/getAddressReceivedDelegations.js';
 import { getDelegateStatement } from './delegates/getDelegateStatement.js';
+import { listDelegates } from './delegates/listDelegates.js';
+import { ListDelegatesInput } from './delegates/delegates.types.js';
 import { getProposalVoters } from './proposals/getProposalVoters.js';
 import { GetProposalVotersInput, ProposalVotersResponse } from './proposals/getProposalVoters.types.js';
+import { listDAOs } from './organizations/listDAOs.js';
+import { ListDAOsParams, OrganizationsResponse } from './organizations/organizations.types.js';
 import {
   AddressProposalsInput,
   AddressProposalsResponse,
@@ -30,6 +34,8 @@ import { getProposalTimeline } from './proposals/getProposalTimeline.js';
 import { GetProposalTimelineInput, ProposalTimelineResponse } from './proposals/getProposalTimeline.types.js';
 import { getProposalSecurityAnalysis } from './proposals/getProposalSecurityAnalysis.js';
 import { GetProposalSecurityAnalysisInput, ProposalSecurityAnalysisResponse } from './proposals/getProposalSecurityAnalysis.types.js';
+import { getDAO } from './organizations/getDAO.js';
+import { Organization } from './organizations/organizations.types.js';
 
 export interface TallyServiceConfig {
   apiKey: string;
@@ -40,9 +46,7 @@ export interface AddressReceivedDelegationsInput {
   organizationSlug?: string;
   governorId?: string;
   limit?: number;
-  afterCursor?: string;
-  beforeCursor?: string;
-  sortBy?: 'id' | 'votes';
+  sortBy?: 'votes';
   isDescending?: boolean;
 }
 
@@ -64,11 +68,12 @@ export interface AddressReceivedDelegationsOutput {
   totalCount: number;
 }
 
-export interface DelegateStatementInput {
+export type DelegateStatementInput = {
   address: string;
-  organizationSlug?: string;
-  governorId?: string;
-}
+} & (
+  | { governorId: string; organizationSlug?: never }
+  | { organizationSlug: string; governorId?: never }
+);
 
 export interface DelegateStatement {
   id: string;
@@ -154,5 +159,17 @@ export class TallyService {
       throw new Error('proposalId is required');
     }
     return getProposalSecurityAnalysis(this.client, input);
+  }
+
+  async listDelegates(input: ListDelegatesInput) {
+    return listDelegates(this.client, input);
+  }
+
+  async getDAO(slug: string): Promise<Organization> {
+    return getDAO(this.client, slug);
+  }
+
+  async listDAOs(params: ListDAOsParams = {}): Promise<OrganizationsResponse> {
+    return listDAOs(this.client, params);
   }
 } 

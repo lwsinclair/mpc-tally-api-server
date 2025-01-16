@@ -1,0 +1,29 @@
+DAO-related Tools:
+getDAO - Fetch details of a specific DAO by slug
+DONE - listDAOs - List DAOs with pagination and sorting options
+Proposal-related Tools:
+listProposals - List proposals for a DAO
+getProposal - Get detailed information about a specific proposal
+getProposalVoters - Get list of voters for a proposal
+getProposalTimeline - Get timeline of events for a proposal
+getProposalSecurityAnalysis - Get security analysis of a proposal
+Address-related Tools:
+getAddressProposals - Get proposals associated with an address
+getAddressDAOProposals - Get DAO-specific proposals for an address
+getAddressVotes - Get voting history for an address
+getAddressCreatedProposals - Get proposals created by an address
+getAddressMetadata - Get metadata about an address
+getAddressSafes - Get safes associated with an address
+getAddressGovernances - Get governance participation info for an address
+getAddressReceivedDelegations - Get delegations received by an address
+Delegate-related Tools:
+listDelegates - List delegates for a DAO
+getDelegateStatement - Get a delegate's statement
+Utility Tools:
+RateLimiter - Handles API rate limiting
+Error handling classes:
+TallyAPIError
+RateLimitError
+ResourceNotFoundError
+ValidationError
+GraphQLRequestError
