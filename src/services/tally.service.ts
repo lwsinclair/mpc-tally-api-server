@@ -7,6 +7,7 @@ import { getProposal } from './proposals/getProposal.js';
 import { getProposalVoters } from './proposals/getProposalVoters.js';
 import { getProposalTimeline } from './proposals/getProposalTimeline.js';
 import { getProposalSecurityAnalysis } from './proposals/getProposalSecurityAnalysis.js';
+import { getAddressProposals } from './addresses/getAddressProposals.js';
 import type { 
   Organization,
   OrganizationsResponse,
@@ -32,6 +33,10 @@ import type {
   GetProposalSecurityAnalysisInput,
   ProposalSecurityAnalysisResponse,
 } from './proposals/getProposalSecurityAnalysis.types.js';
+import type {
+  AddressProposalsInput,
+  AddressProposalsResponse,
+} from './addresses/addresses.types.js';
 
 export interface TallyServiceConfig {
   apiKey: string;
@@ -89,6 +94,13 @@ export class TallyService {
       throw new Error('proposalId is required');
     }
     return getProposalSecurityAnalysis(this.client, input);
+  }
+
+  async getAddressProposals(input: AddressProposalsInput): Promise<AddressProposalsResponse> {
+    if (!input.address) {
+      throw new Error('address is required');
+    }
+    return getAddressProposals(this.client, input);
   }
 
   static formatProposal(proposal: any): string {
