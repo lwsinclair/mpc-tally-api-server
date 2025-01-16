@@ -110,7 +110,7 @@ export class TallyService {
     }
 
     return organizations
-      .map(org => `- ${org.name} (${org.slug})\n  Members: ${org.memberCount || 'N/A'}\n  Proposals: ${org.proposalCount || 'N/A'}`)
+      .map(org => `- ${org.name} (${org.slug})\n  Token Owners: ${org.tokenOwnersCount || 'N/A'}\n  Proposals: ${org.proposalsCount || 'N/A'}\n  Delegates: ${org.delegatesCount || 'N/A'}`)
       .join('\n');
   }
 
