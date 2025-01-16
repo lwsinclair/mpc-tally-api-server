@@ -13,6 +13,7 @@ import { getAddressVotes } from './addresses/getAddressVotes.js';
 import { getAddressCreatedProposals } from './addresses/getAddressCreatedProposals.js';
 import { getAddressMetadata } from './addresses/getAddressMetadata.js';
 import { getAddressGovernances } from './addresses/getAddressGovernances.js';
+import { getAddressReceivedDelegations } from './addresses/getAddressReceivedDelegations.js';
 import type { 
   Organization,
   OrganizationsResponse,
@@ -51,6 +52,8 @@ import type {
   AddressMetadataResponse,
   AddressGovernancesInput,
   AddressGovernancesResponse,
+  GetAddressReceivedDelegationsInput,
+  GetAddressReceivedDelegationsOutput,
 } from './addresses/addresses.types.js';
 
 export interface TallyServiceConfig {
@@ -154,6 +157,13 @@ export class TallyService {
       throw new Error('Address is required');
     }
     return getAddressGovernances(this.client, input);
+  }
+
+  async getAddressReceivedDelegations(input: GetAddressReceivedDelegationsInput): Promise<GetAddressReceivedDelegationsOutput> {
+    if (!input.address) {
+      throw new Error('address is required');
+    }
+    return getAddressReceivedDelegations(this.client, input);
   }
 
   static formatProposal(proposal: any): string {

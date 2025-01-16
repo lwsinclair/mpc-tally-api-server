@@ -181,4 +181,35 @@ export interface AddressGovernancesResponse {
   account: {
     delegatedGovernors: AddressGovernance[];
   };
+}
+
+export interface GetAddressReceivedDelegationsInput {
+  address: string;
+  organizationSlug?: string;
+  governorId?: string;
+  limit?: number;
+  sortBy?: 'votes';
+  isDescending?: boolean;
+}
+
+export interface DelegationNode {
+  id: string;
+  votes: string;
+  delegator: {
+    id: string;
+    address: string;
+  };
+}
+
+export interface GetAddressReceivedDelegationsOutput {
+  nodes: DelegationNode[];
+  pageInfo: PageInfo;
+  totalCount: number;
+}
+
+export interface PageInfo {
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  startCursor: string | null;
+  endCursor: string | null;
 } 
