@@ -351,6 +351,42 @@ export class TallyServer {
             },
           },
         },
+        {
+          name: "get-delegate-statement",
+          description: "Get a delegate's statement for a specific governor or organization",
+          inputSchema: {
+            type: "object",
+            required: ["address"],
+            oneOf: [
+              {
+                required: ["governorId"],
+                properties: {
+                  address: {
+                    type: "string",
+                    description: "The delegate's Ethereum address"
+                  },
+                  governorId: {
+                    type: "string",
+                    description: "The governor's ID"
+                  }
+                }
+              },
+              {
+                required: ["organizationSlug"],
+                properties: {
+                  address: {
+                    type: "string",
+                    description: "The delegate's Ethereum address"
+                  },
+                  organizationSlug: {
+                    type: "string",
+                    description: "The organization's slug (e.g., 'uniswap')"
+                  }
+                }
+              }
+            ]
+          }
+        },
       ];
 
       return { tools };
@@ -407,22 +443,15 @@ export class TallyServer {
             throw new Error('organizationIdOrSlug must be a string');
           }
 
-          // Determine if the input is an ID, governor ID, or slug
-          const isGovernorId = args.organizationIdOrSlug.startsWith('eip155:');
-          const isNumericId = /^\d+$/.test(args.organizationIdOrSlug);
-          
-          const params = {
-            ...(isGovernorId ? { organizationId: args.organizationIdOrSlug } : {}),
-            ...(isNumericId ? { organizationId: args.organizationIdOrSlug } : {}),
-            ...(!isGovernorId && !isNumericId ? { organizationSlug: args.organizationIdOrSlug } : {}),
+          const data = await this.service.listDelegates({
+            organizationId: args.organizationIdOrSlug.match(/^\d+$/) ? args.organizationIdOrSlug : undefined,
+            organizationSlug: !args.organizationIdOrSlug.match(/^\d+$/) && !args.organizationIdOrSlug.startsWith('eip155:') ? args.organizationIdOrSlug : undefined,
+            governorId: args.organizationIdOrSlug.startsWith('eip155:') ? args.organizationIdOrSlug : undefined,
             limit: typeof args.limit === 'number' ? args.limit : undefined,
-            afterCursor: typeof args.afterCursor === 'string' ? args.afterCursor : undefined,
             hasVotes: typeof args.hasVotes === 'boolean' ? args.hasVotes : undefined,
             hasDelegators: typeof args.hasDelegators === 'boolean' ? args.hasDelegators : undefined,
             isSeekingDelegation: typeof args.isSeekingDelegation === 'boolean' ? args.isSeekingDelegation : undefined,
-          };
-
-          const data = await this.service.listDelegates(params);
+          });
 
           const content: TextContent[] = [
             {
@@ -713,6 +742,31 @@ export class TallyServer {
           return { content };
         } catch (error) {
           throw new Error(`Error fetching received delegations: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+
+      if (name === "get-delegate-statement") {
+        try {
+          if (typeof args.address !== 'string') {
+            throw new Error('address must be a string');
+          }
+
+          const result = await this.service.getDelegateStatement({
+            address: args.address,
+            governorId: typeof args.governorId === 'string' ? args.governorId : undefined,
+            organizationSlug: typeof args.organizationSlug === 'string' ? args.organizationSlug : undefined,
+          });
+
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text: result.statement
+            }
+          ];
+
+          return { content };
+        } catch (error) {
+          throw new Error(`Error fetching delegate statement: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
 
