@@ -71,21 +71,17 @@ export async function getProposalVoters(
           throw new Error('Rate limit exceeded. Please try again later.');
         }
 
-        // Handle other GraphQL errors
-        if (graphqlError.response?.errors) {
-          const gqlError = graphqlError.response.errors[0];
-          // If the proposal doesn't exist, return empty result
-          if (gqlError.message.includes('not found') || gqlError.message.includes('invalid input')) {
-            return {
-              proposalVoters: {
-                nodes: [],
-                pageInfo: {
-                  firstCursor: '',
-                  lastCursor: ''
-                }
+        // Handle invalid input (422) or other GraphQL errors
+        if (graphqlError.response?.status === 422 || graphqlError.response?.errors) {
+          return {
+            proposalVoters: {
+              nodes: [],
+              pageInfo: {
+                firstCursor: '',
+                lastCursor: ''
               }
-            };
-          }
+            }
+          };
         }
       }
       

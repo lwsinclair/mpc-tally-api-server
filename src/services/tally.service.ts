@@ -4,6 +4,7 @@ import { getDAO } from './organizations/getDAO.js';
 import { listDelegates } from './delegates/listDelegates.js';
 import { listProposals } from './proposals/listProposals.js';
 import { getProposal } from './proposals/getProposal.js';
+import { getProposalVoters } from './proposals/getProposalVoters.js';
 import type { 
   Organization,
   OrganizationsResponse,
@@ -17,6 +18,10 @@ import type {
   ProposalInput,
   ProposalDetailsResponse,
 } from './proposals/index.js';
+import type {
+  GetProposalVotersInput,
+  ProposalVotersResponse,
+} from './proposals/getProposalVoters.types.js';
 
 export interface TallyServiceConfig {
   apiKey: string;
@@ -55,6 +60,13 @@ export class TallyService {
     return getProposal(this.client, input);
   }
 
+  async getProposalVoters(input: GetProposalVotersInput): Promise<ProposalVotersResponse> {
+    if (!input.proposalId) {
+      throw new Error('proposalId is required');
+    }
+    return getProposalVoters(this.client, input);
+  }
+
   static formatProposal(proposal: any): string {
     return `Proposal: ${proposal.metadata.title}
 ID: ${proposal.id}
@@ -73,17 +85,8 @@ ${proposal.voteStats.map((stat: any) =>
       proposals.map(proposal =>
         `${proposal.metadata.title}\n` +
         `Tally ID: ${proposal.id}\n` +
-        `Onchain ID: ${proposal.onchainId}\n` +
         `Status: ${proposal.status}\n` +
-        `Created: ${new Date(proposal.createdAt).toLocaleString()}\n` +
-        `Quorum: ${proposal.quorum}\n` +
-        `Organization: ${proposal.governor.organization.name} (${proposal.governor.organization.slug})\n` +
-        `Governor: ${proposal.governor.name}\n` +
-        `Vote Stats:\n${proposal.voteStats.map(stat =>
-          `  ${stat.type}: ${stat.percent.toFixed(2)}% (${stat.votesCount} votes from ${stat.votersCount} voters)`
-        ).join('\n')}\n` +
-        `Description: ${proposal.metadata.description.slice(0, 200)}${proposal.metadata.description.length > 200 ? '...' : ''}\n` +
-        '---'
-      ).join('\n\n');
+        `Created: ${new Date(proposal.createdAt).toLocaleString()}\n\n`
+      ).join('');
   }
 } 
