@@ -8,13 +8,13 @@ partial -getProposalVoters - Get list of voters for a proposal
 partial - getProposalTimeline - Get timeline of events for a proposal
 partial - getProposalSecurityAnalysis - Get security analysis of a proposal
 Address-related Tools:
-getAddressProposals - Get proposals associated with an address
-getAddressDAOProposals - Get DAO-specific proposals for an address
-getAddressVotes - Get voting history for an address
-getAddressCreatedProposals - Get proposals created by an address
-getAddressMetadata - Get metadata about an address
+partial getAddressProposals - Get proposals associated with an address
+partial -getAddressDAOProposals - Get DAO-specific proposals for an address
+partial - getAddressVotes - Get voting history for an address
+partial - getAddressCreatedProposals - Get proposals created by an address
+partial - getAddressMetadata - Get metadata about an address
 getAddressSafes - Get safes associated with an address
-getAddressGovernances - Get governance participation info for an address
+partial - getAddressGovernances - Get governance participation info for an address
 getAddressReceivedDelegations - Get delegations received by an address
 Delegate-related Tools:
 listDelegates - List delegates for a DAO

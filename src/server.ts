@@ -387,6 +387,20 @@ export class TallyServer {
             ]
           }
         },
+        {
+          name: "get-address-governances",
+          description: "Returns the list of governances (DAOs) an address has delegated to",
+          inputSchema: {
+            type: "object",
+            required: ["address"],
+            properties: {
+              address: {
+                type: "string",
+                description: "The Ethereum address to get governances for (0x format)",
+              },
+            },
+          },
+        },
       ];
 
       return { tools };
@@ -767,6 +781,39 @@ export class TallyServer {
           return { content };
         } catch (error) {
           throw new Error(`Error fetching delegate statement: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+
+      if (name === "get-address-governances") {
+        try {
+          if (typeof args.address !== 'string') {
+            throw new Error('address must be a string');
+          }
+
+          const result = await this.service.getAddressGovernances({
+            address: args.address,
+          });
+
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text: `Governances for ${args.address}:\n\n` +
+                result.account.delegatedGovernors.map(gov => 
+                  `- Name: ${gov.name}\n` +
+                  `  Type: ${gov.type}\n` +
+                  `  Organization: ${gov.organization.name} (${gov.organization.slug})\n` +
+                  `  Stats:\n` +
+                  `    Proposals: ${gov.stats.proposalsCount}\n` +
+                  `    Delegates: ${gov.stats.delegatesCount}\n` +
+                  `    Token Holders: ${gov.stats.tokenHoldersCount}\n` +
+                  `  Tokens: ${gov.tokens.map(t => `${t.name} (${t.symbol})`).join(', ')}`
+                ).join('\n\n')
+            }
+          ];
+
+          return { content };
+        } catch (error) {
+          throw new Error(`Error fetching address governances: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
 
