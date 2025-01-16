@@ -11,6 +11,7 @@ import { getAddressProposals } from './addresses/getAddressProposals.js';
 import { getAddressDAOProposals } from './addresses/getAddressDAOProposals.js';
 import { getAddressVotes } from './addresses/getAddressVotes.js';
 import { getAddressCreatedProposals } from './addresses/getAddressCreatedProposals.js';
+import { getAddressMetadata } from './addresses/getAddressMetadata.js';
 import type { 
   Organization,
   OrganizationsResponse,
@@ -45,6 +46,8 @@ import type {
   AddressVotesResponse,
   AddressCreatedProposalsInput,
   AddressCreatedProposalsResponse,
+  AddressMetadataInput,
+  AddressMetadataResponse,
 } from './addresses/addresses.types.js';
 
 export interface TallyServiceConfig {
@@ -134,6 +137,13 @@ export class TallyService {
       throw new Error('address is required');
     }
     return getAddressCreatedProposals(this.client, input);
+  }
+
+  async getAddressMetadata(input: AddressMetadataInput): Promise<AddressMetadataResponse> {
+    if (!input.address) {
+      throw new Error('Address is required');
+    }
+    return getAddressMetadata(this.client, input);
   }
 
   static formatProposal(proposal: any): string {
