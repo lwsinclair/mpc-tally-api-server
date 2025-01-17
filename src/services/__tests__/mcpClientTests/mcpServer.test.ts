@@ -185,4 +185,41 @@ describe("MCP Server Tests", () => {
       expect(result.content[0].text).toContain("Uniswap");
     });
   }, 60000);
+
+  test("should fetch address votes", async () => {
+    // Using a known address that has votes on Uniswap
+    const address = "0xb49f8b8613be240213c1827e2e576044ffec7948";
+    const organizationSlug = "uniswap";
+
+    const result = await mcpClient.callTool("get-address-votes", {
+      address,
+      organizationSlug
+    });
+
+    // Verify the response structure
+    expect(result).toBeDefined();
+    expect(result.content).toBeDefined();
+    expect(Array.isArray(result.content)).toBe(true);
+    
+    // Each content item should be a text type with vote details
+    result.content.forEach((item: any) => {
+      expect(item.type).toBe("text");
+      expect(item.text).toBeDefined();
+      
+      // Vote details should include key information
+      const text = item.text;
+      expect(text).toContain("Vote Details:");
+      expect(text).toContain("ID:");
+      expect(text).toContain("Type:");
+      expect(text).toContain("Amount:");
+      expect(text).toContain("Voter Address:");
+      expect(text).toContain("Proposal ID:");
+    });
+
+    // Verify pagination info
+    expect(result.pageInfo).toBeDefined();
+    expect(result.pageInfo).toHaveProperty("firstCursor");
+    expect(result.pageInfo).toHaveProperty("lastCursor");
+    expect(result.pageInfo).toHaveProperty("count");
+  }, 30000);
 }); 
