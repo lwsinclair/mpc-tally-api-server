@@ -62,6 +62,8 @@ export async function getAddressVotes(
       }
     });
 
+    console.log('API Response:', JSON.stringify(response, null, 2));
+
     // Return raw response
     return response;
   } catch (error) {

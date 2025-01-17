@@ -104,10 +104,6 @@ export const GET_ADDRESS_VOTES_QUERY = gql`
           proposal {
             id
           }
-          chainId
-          txHash
-          isBridged
-          reason
         }
       }
       pageInfo {
