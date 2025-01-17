@@ -668,39 +668,15 @@ export class TallyServer {
           }
 
           const result = await this.service.getAddressVotes(args);
-          
-          if (!result.votes?.nodes?.length) {
-            return {
-              content: [{
-                type: "text",
-                text: `No votes found for address ${args.address} in organization ${args.organizationSlug}`
-              }],
-              pageInfo: result.votes?.pageInfo
-            };
-          }
 
-          const content = result.votes.nodes.map(vote => ({
+          const content: TextContent[] = result.votes.nodes.map(vote => ({
             type: "text",
             text: `Vote Details:
 ID: ${vote.id}
 Type: ${vote.type}
 Amount: ${vote.amount}
 Voter Address: ${vote.voter.address}
-Name: ${vote.voter.name || 'N/A'}
-ENS: ${vote.voter.ens || 'N/A'}
-Twitter: ${vote.voter.twitter || 'N/A'}
-Picture: ${vote.voter.picture || 'N/A'}
-Proposal ID: ${vote.proposal.id}
-Title: ${vote.proposal.metadata?.title || 'No title'}
-Description: ${vote.proposal.metadata?.description || 'No description'}
-Status: ${vote.proposal.status}
-Vote Stats: ${vote.proposal.voteStats?.map(stat => 
-  `${stat.type}: ${stat.percent}% (${stat.votesCount} votes from ${stat.votersCount} voters)`
-).join(', ') || 'No stats available'}
-Reason: ${vote.reason || 'No reason provided'}
-Transaction: ${vote.txHash || 'Not available'}
-Chain ID: ${vote.chainId || 'Not available'}
-Bridged: ${vote.isBridged ? 'Yes' : 'No'}`
+Proposal ID: ${vote.proposal.id}`
           }));
 
           return {
