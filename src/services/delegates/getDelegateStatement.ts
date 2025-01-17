@@ -1,5 +1,5 @@
 import { GraphQLClient } from 'graphql-request';
-import { DelegateStatement } from '../../types.js';
+import { DelegateStatement } from './delegates.types.js';
 import { GraphQLError } from 'graphql';
 import { getDAO } from '../organizations/getDAO.js';
 import { gql } from 'graphql-request';
@@ -14,12 +14,14 @@ import {
 
 const MAX_RETRIES = 5;
 
-const GET_DELEGATE_STATEMENT_QUERY = gql`
-  query GetDelegateStatement($address: AccountID!, $governorId: ID!) {
-    account(id: $address) {
-      delegateStatement(governorId: $governorId) {
-        id
+const GET_DELEGATE_QUERY = gql`
+  query GetDelegate($input: DelegateInput!) {
+    delegate(input: $input) {
+      id
+      account {
         address
+      }
+      statement {
         statement
         statementSummary
         isSeekingDelegation
@@ -27,11 +29,11 @@ const GET_DELEGATE_STATEMENT_QUERY = gql`
           id
           name
         }
-        governor {
-          id
-          name
-          type
-        }
+      }
+      governor {
+        id
+        name
+        type
       }
     }
   }
@@ -45,6 +47,16 @@ type GetDelegateStatementInput = {
   | { organizationSlug: string; governorId?: never }
 );
 
+// Validate Ethereum address format
+const isValidEthereumAddress = (address: string): boolean => {
+  return /^0x[a-fA-F0-9]{40}$/.test(address);
+};
+
+// Validate governor ID format
+const isValidGovernorId = (governorId: string): boolean => {
+  return /^eip155:1:0x[a-fA-F0-9]{40}$/.test(governorId);
+};
+
 export async function getDelegateStatement(
   client: GraphQLClient,
   input: GetDelegateStatementInput
@@ -52,87 +64,146 @@ export async function getDelegateStatement(
   let retries = 0;
   let lastError: Error | null = null;
 
+  // Input validation
+  if (!input.address) {
+    throw new ValidationError('Address is required');
+  }
+
+  if (!isValidEthereumAddress(input.address)) {
+    throw new ValidationError('Invalid Ethereum address format');
+  }
+
+  if (!input.governorId && !input.organizationSlug) {
+    throw new ValidationError('Either governorId or organizationSlug is required');
+  }
+
+  if (input.governorId && input.organizationSlug) {
+    throw new ValidationError('Cannot provide both governorId and organizationSlug');
+  }
+
   while (retries < MAX_RETRIES) {
     try {
-      if (!input.address) {
-        throw new ValidationError('Address is required');
-      }
-
       let governorId: string;
 
       if ('governorId' in input && input.governorId) {
-        governorId = input.governorId;
+        // Format the governor ID if needed
+        governorId = input.governorId.startsWith('eip155:1:') ? input.governorId : `eip155:1:${input.governorId}`;
       } else if ('organizationSlug' in input && input.organizationSlug) {
         // Wait for rate limit before getDAO request
         await globalRateLimiter.waitForRateLimit();
-        const dao = await getDAO(client, input.organizationSlug);
-        if (!dao.governorIds?.length) {
-          throw new ResourceNotFoundError('Organization or governor', input.organizationSlug);
+        try {
+          const dao = await getDAO(client, input.organizationSlug);
+          if (!dao.governorIds?.length) {
+            return null;
+          }
+          governorId = dao.governorIds[0];
+        } catch (error) {
+          if (error instanceof ResourceNotFoundError) {
+            return null;
+          }
+          if (error instanceof TallyAPIError && error.message.includes('Organization not found')) {
+            return null;
+          }
+          throw new TallyAPIError(`Failed to fetch DAO: ${error.message}`);
         }
-        governorId = dao.governorIds[0];
       } else {
         throw new ValidationError('Either governorId or organizationSlug is required');
       }
 
-      // Wait for rate limit before delegate statement request
+      // Wait for rate limit before delegate request
       await globalRateLimiter.waitForRateLimit();
 
       const variables = {
-        address: input.address,
-        governorId
+        input: {
+          address: input.address,
+          governorId
+        }
       };
 
       const response = await client.request<{
-        account?: {
-          delegateStatement: DelegateStatement | null;
-        };
-      }>(GET_DELEGATE_STATEMENT_QUERY, variables);
+        delegate: {
+          id: string;
+          account: {
+            address: string;
+          };
+          statement: {
+            statement: string;
+            statementSummary: string;
+            isSeekingDelegation: boolean;
+            issues: Array<{
+              id: string;
+              name: string;
+            }> | null;
+          } | null;
+          governor: {
+            id: string;
+            name: string;
+            type: string;
+          } | null;
+        } | null;
+      }>(GET_DELEGATE_QUERY, variables);
 
       // Update rate limiter with response headers if available
       if ('headers' in response) {
         globalRateLimiter.updateFromHeaders(response.headers as Record<string, string>);
       }
 
-      if (!response.account?.delegateStatement) {
+      if (!response.delegate?.statement) {
         return null;
       }
 
-      return response.account.delegateStatement;
+      // Transform the response to match our DelegateStatement type
+      return {
+        id: response.delegate.id,
+        address: response.delegate.account.address,
+        statement: response.delegate.statement.statement,
+        statementSummary: response.delegate.statement.statementSummary,
+        isSeekingDelegation: response.delegate.statement.isSeekingDelegation,
+        issues: response.delegate.statement.issues || [],
+        governor: response.delegate.governor || undefined
+      };
     } catch (error) {
       lastError = error;
       if (error instanceof GraphQLError) {
-        const graphqlError = error as GraphQLError;
-        
-        // Handle rate limiting (429)
-        if (graphqlError.response?.status === 429) {
-          retries++;
-          if (retries < MAX_RETRIES) {
-            await globalRateLimiter.exponentialBackoff(retries);
-            continue;
-          }
-          throw new RateLimitError('Rate limit exceeded after retries', {
-            retries,
-            status: graphqlError.response.status
-          });
+        // Check if we have a response with data
+        if (error.response?.data?.delegate === null) {
+          return null;
         }
 
-        // Handle other GraphQL errors
-        if (graphqlError.response?.errors) {
-          lastError = graphqlError.response.errors[0];
-          if (lastError.message.includes('not found')) {
+        // Check for errors in the response
+        if (error.response?.errors?.length > 0) {
+          const firstError = error.response.errors[0];
+          const errorMessage = firstError.message.toLowerCase();
+          const errorPath = firstError.path?.join('.');
+          
+          // Return null for specific error cases
+          if (
+            errorMessage.includes('not found') ||
+            errorMessage.includes('not valid') ||
+            errorMessage.includes('invalid') ||
+            errorMessage.includes('account id is not valid') ||
+            errorMessage.includes('internal system error')
+          ) {
             return null;
           }
         }
 
-        throw new GraphQLRequestError(
-          `GraphQL error: ${lastError?.message}`,
-          'GetDelegateStatement',
-          variables
-        );
+        // Check if it's a GraphQL response error with null data
+        if (error.response?.data?.delegate === null) {
+          return null;
+        }
+
+        throw new TallyAPIError(`Failed to fetch delegate: ${error.message}`, {
+          response: error.response,
+          request: error.request,
+        });
       }
       
       // If we've reached here, it's an unexpected error
-      throw new TallyAPIError(`Failed to fetch delegate statement: ${lastError?.message}`);
+      if (lastError?.message?.toLowerCase().includes('internal system error')) {
+        return null;
+      }
+      throw new TallyAPIError(`Failed to fetch delegate: ${lastError?.message}`);
     }
   }
 
