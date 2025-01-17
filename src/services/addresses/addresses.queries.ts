@@ -91,41 +91,33 @@ export const GET_ADDRESS_DAO_PROPOSALS_QUERY = gql`
 `;
 
 export const GET_ADDRESS_VOTES_QUERY = gql`
-  fragment VoteFields on Vote {
-    id
-    type
-    amount
-    reason
-    block {
-      timestamp
-    }
-    voter {
-      address
-      name
-      ens
-    }
-    proposal {
-      id
-      onchainId
-      governor {
-        id
-        organization {
-          id
-          name
-          slug
-        }
-      }
-      metadata {
-        title
-      }
-    }
-  }
-
-  query GetVotes($input: VotesInput!) {
+  query GetAddressVotes($input: VotesInput!) {
     votes(input: $input) {
       nodes {
         ... on Vote {
-          ...VoteFields
+          id
+          voter {
+            address
+            name
+            ens
+          }
+          proposal {
+            id
+            onchainId
+            governor {
+              id
+              organization {
+                id
+                name
+                slug
+              }
+            }
+          }
+          support
+          weight
+          reason
+          createdAt
+          chainId
         }
       }
       pageInfo {
