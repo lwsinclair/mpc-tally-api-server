@@ -625,6 +625,7 @@ export class TallyServer {
 
           const result = await this.service.getAddressDAOProposals({
             address: args.address,
+            organizationSlug: args.organizationSlug,
             limit: args.limit,
             afterCursor: args.afterCursor,
           });
@@ -673,20 +674,19 @@ export class TallyServer {
             afterCursor: args.afterCursor,
           });
 
-          const votes = result.votes.nodes;
-          const content = votes.map(vote => ({
-            id: vote.id,
-            type: vote.type,
-            amount: vote.amount,
-            reason: vote.reason,
-            blockTimestamp: vote.block?.timestamp,
-            proposal: vote.proposal,
-            voter: vote.voter,
+          const content: TextContent[] = result.votes.nodes.map(vote => ({
+            type: "text",
+            text: `Vote Details:\n` +
+                  `ID: ${vote.id}\n` +
+                  `Type: ${vote.type}\n` +
+                  `Amount: ${vote.amount}\n` +
+                  `Voter: ${vote.voter.address}\n` +
+                  `Proposal ID: ${vote.proposal.id}`
           }));
 
           return {
             content,
-            pageInfo: result.votes.pageInfo,
+            pageInfo: result.votes.pageInfo
           };
         } catch (error) {
           throw new Error(`Error fetching address votes: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -800,13 +800,7 @@ export class TallyServer {
               text: `Governances for ${args.address}:\n\n` +
                 result.account.delegatedGovernors.map(gov => 
                   `- Name: ${gov.name}\n` +
-                  `  Type: ${gov.type}\n` +
-                  `  Organization: ${gov.organization.name} (${gov.organization.slug})\n` +
-                  `  Stats:\n` +
-                  `    Proposals: ${gov.stats.proposalsCount}\n` +
-                  `    Delegates: ${gov.stats.delegatesCount}\n` +
-                  `    Token Holders: ${gov.stats.tokenHoldersCount}\n` +
-                  `  Tokens: ${gov.tokens.map(t => `${t.name} (${t.symbol})`).join(', ')}`
+                  `  Type: ${gov.type}\n`
                 ).join('\n\n')
             }
           ];
@@ -826,4 +820,4 @@ export class TallyServer {
     await this.server.connect(transport);
     console.error("Tally MCP Server running on stdio");
   }
-} 
+}
