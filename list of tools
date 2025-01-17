@@ -1,8 +1,8 @@
 DAO-related Tools:
-partial - getDAO - Fetch details of a specific DAO by slug
-DONE - listDAOs - List DAOs with pagination and sorting options
+#partial - getDAO - Fetch details of a specific DAO by slug
+# DONE - listDAOs - List DAOs with pagination and sorting options
 Proposal-related Tools:
-partial -listProposals - List proposals for a DAO
+# partial -listProposals - List proposals for a DAO
 partial - getProposal - Get detailed information about a specific proposal
 partial -getProposalVoters - Get list of voters for a proposal
 partial - getProposalTimeline - Get timeline of events for a proposal
@@ -18,7 +18,7 @@ partial - getAddressGovernances - Get governance participation info for an addre
 partial getAddressReceivedDelegations - Get delegations received by an address
 Delegate-related Tools:
 partial - listDelegates - List delegates for a DAO
-getDelegateStatement - Get a delegate's statement
+partial getDelegateStatement - Get a delegate's statement
 Utility Tools:
 RateLimiter - Handles API rate limiting
 Error handling classes:

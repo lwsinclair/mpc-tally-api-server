@@ -23,10 +23,9 @@ export interface GetAddressReceivedDelegationsOutput {
 }
 
 export interface PageInfo {
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-  startCursor: string | null;
-  endCursor: string | null;
+  firstCursor: string | null;
+  lastCursor: string | null;
+  count: number;
 }
 
 export interface DelegateStatement {

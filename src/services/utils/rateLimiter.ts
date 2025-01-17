@@ -7,7 +7,7 @@ export class RateLimiter {
   private readonly baseDelay: number;
   private readonly maxDelay: number;
 
-  constructor(baseDelay = 2000, maxDelay = 10000) {
+  constructor(baseDelay = 1000, maxDelay = 5000) {
     this.baseDelay = baseDelay;
     this.maxDelay = maxDelay;
   }

@@ -1,17 +1,15 @@
 import { GraphQLClient } from 'graphql-request';
 import { GET_ADDRESS_VOTES_QUERY } from './addresses.queries.js';
-import { AddressVotesInput, AddressVotesResponse } from './addresses.types.js';
+import { AddressVotesInput } from './addresses.types.js';
 import { getDAO } from '../organizations/getDAO.js';
+import { listProposals } from '../proposals/listProposals.js';
 import { globalRateLimiter } from '../utils/rateLimiter.js';
-import {
-  TallyAPIError,
-  ValidationError
-} from '../errors/apiErrors.js';
+import { TallyAPIError, ValidationError } from '../errors/apiErrors.js';
 
 export async function getAddressVotes(
   client: GraphQLClient,
   input: AddressVotesInput
-): Promise<AddressVotesResponse> {
+): Promise<any> {
   try {
     if (!input.address) {
       throw new ValidationError('address is required');
@@ -25,38 +23,50 @@ export async function getAddressVotes(
     await globalRateLimiter.waitForRateLimit();
     const dao = await getDAO(client, input.organizationSlug);
 
-    // Step 2: Make the votes request
+    // Step 2: Get proposals for this organization
     await globalRateLimiter.waitForRateLimit();
-    const response = await client.request<{ votes: { nodes: any[]; pageInfo: any } }>(GET_ADDRESS_VOTES_QUERY, {
+    const proposals = await listProposals(client, {
+      filters: {
+        organizationId: dao.id
+      },
+      page: {
+        limit: 1
+      }
+    });
+
+    if (!proposals.proposals.nodes.length) {
+      return {
+        votes: {
+          nodes: [],
+          pageInfo: {
+            firstCursor: '',
+            lastCursor: '',
+            count: 0
+          }
+        }
+      };
+    }
+
+    // Step 3: Get votes for these proposals
+    await globalRateLimiter.waitForRateLimit();
+    const response = await client.request(GET_ADDRESS_VOTES_QUERY, {
       input: {
         filters: {
-          voter: input.address,
-          governorIds: dao.governorIds
+          proposalIds: [proposals.proposals.nodes[0].id],
+          voter: input.address
         },
-        pagination: {
-          limit: input.limit || 20,
-          afterCursor: input.afterCursor
+        page: {
+          limit: input.limit || 20
         }
       }
     });
 
-    return {
-      votes: {
-        nodes: response.votes?.nodes.map(vote => ({
-          id: vote.id,
-          type: vote.support === 1 ? 'for' : vote.support === 0 ? 'against' : 'abstain',
-          amount: vote.weight,
-          reason: vote.reason,
-          voter: vote.voter,
-          proposal: vote.proposal
-        })) || [],
-        pageInfo: response.votes?.pageInfo || {
-          firstCursor: '',
-          lastCursor: ''
-        }
-      }
-    };
+    // Return raw response
+    return response;
   } catch (error) {
-    throw new TallyAPIError(`Failed to fetch address votes: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    if (error instanceof Error) {
+      throw new TallyAPIError(`Failed to fetch address votes: ${error.message}`);
+    }
+    throw new TallyAPIError('Failed to fetch address votes: Unknown error');
   }
 } 

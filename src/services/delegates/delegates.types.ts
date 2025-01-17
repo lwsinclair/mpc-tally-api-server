@@ -51,4 +51,27 @@ export interface ListDelegatesResponse {
       };
     };
   }>;
+}
+
+export interface DelegateStatement {
+  id: string;
+  address: string;
+  statement: string;
+  statementSummary: string;
+  isSeekingDelegation: boolean;
+  issues: Array<{
+    id: string;
+    name: string;
+  }>;
+  governor?: {
+    id: string;
+    name: string;
+    type: string;
+  };
+}
+
+export interface GetDelegateStatementInput {
+  address: string;
+  organizationSlug?: string;
+  governorId?: string;
 } 

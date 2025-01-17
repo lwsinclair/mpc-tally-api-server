@@ -15,6 +15,7 @@ import { getAddressMetadata } from './addresses/getAddressMetadata.js';
 import { getAddressGovernances } from './addresses/getAddressGovernances.js';
 import { getAddressReceivedDelegations } from './addresses/getAddressReceivedDelegations.js';
 import { getDelegateStatement } from './delegates/getDelegateStatement.js';
+import { getDelegators } from './delegators/getDelegators.js';
 import type { 
   Organization,
   OrganizationsResponse,
@@ -194,6 +195,16 @@ export class TallyService {
 
   async getDelegateStatement(input: GetDelegateStatementInput): Promise<DelegateStatement | null> {
     return getDelegateStatement(this.client, input);
+  }
+
+  async getDelegators(params: GetDelegatorsParams): Promise<{
+    delegators: Delegation[];
+    pageInfo: PageInfo;
+  }> {
+    if (!params.address) {
+      throw new Error('address is required');
+    }
+    return getDelegators(this.client, params);
   }
 
   /**

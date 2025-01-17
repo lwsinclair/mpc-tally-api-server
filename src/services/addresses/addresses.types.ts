@@ -32,33 +32,32 @@ export interface AddressDAOProposalsResponse {
   };
 }
 
+export enum VoteType {
+  Abstain = 'abstain',
+  Against = 'against',
+  For = 'for',
+  PendingAbstain = 'pendingabstain',
+  PendingAgainst = 'pendingagainst',
+  PendingFor = 'pendingfor'
+}
+
 export interface Vote {
   id: string;
+  type: VoteType;
+  amount: string;
   voter: {
     address: string;
   };
   proposal: {
     id: string;
-    governor: {
-      id: string;
-      organization: {
-        id: string;
-        name: string;
-        slug: string;
-      };
-    };
-  };
-  type: 'for' | 'against' | 'abstain';
-  amount: string;
-  reason: string | null;
-  block: {
-    timestamp: string;
   };
 }
 
 export interface AddressVotesInput {
   address: string;
   organizationSlug: string;
+  limit?: number;
+  afterCursor?: string;
 }
 
 export interface AddressVotesResponse {
@@ -67,6 +66,7 @@ export interface AddressVotesResponse {
     pageInfo: {
       firstCursor: string;
       lastCursor: string;
+      count: number;
     };
   };
 }

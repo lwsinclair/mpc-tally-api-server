@@ -96,33 +96,20 @@ export const GET_ADDRESS_VOTES_QUERY = gql`
       nodes {
         ... on Vote {
           id
+          type
+          amount
           voter {
             address
-            name
-            ens
           }
           proposal {
             id
-            onchainId
-            governor {
-              id
-              organization {
-                id
-                name
-                slug
-              }
-            }
           }
-          support
-          weight
-          reason
-          createdAt
-          chainId
         }
       }
       pageInfo {
         firstCursor
         lastCursor
+        count
       }
     }
   }

@@ -12,25 +12,27 @@ export async function getAddressDAOProposals(
       throw new Error('Address is required');
     }
 
+    if (!input.governorId && !input.organizationSlug) {
+      throw new Error('Either governorId or organizationSlug is required');
+    }
+
     // Get governorId from organizationSlug if provided
     let governorId = input.governorId;
     if (!governorId && input.organizationSlug) {
       const dao = await getDAO(client, input.organizationSlug);
       if (dao.governorIds && dao.governorIds.length > 0) {
         governorId = dao.governorIds[0];
+      } else {
+        throw new Error('No governor IDs found for the given organization');
       }
     }
 
-    if (!governorId) {
-      throw new Error('Either governorId or organizationSlug is required');
-    }
-
-    const response = await client.request(GET_ADDRESS_DAO_PROPOSALS_QUERY, {
+    const response = await client.request<AddressDAOProposalsResponse>(GET_ADDRESS_DAO_PROPOSALS_QUERY, {
       input: {
         filters: {
           governorId
         },
-        page: {
+        pagination: {
           limit: input.limit || 20,
           afterCursor: input.afterCursor
         }
@@ -40,6 +42,6 @@ export async function getAddressDAOProposals(
 
     return response;
   } catch (error) {
-    throw new Error(`Failed to fetch DAO proposals: ${error.message}`);
+    throw new Error(`Failed to fetch DAO proposals: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 } 
