@@ -680,7 +680,7 @@ export class TallyServer {
                   `ID: ${vote.id}\n` +
                   `Type: ${vote.type}\n` +
                   `Amount: ${vote.amount}\n` +
-                  `Voter: ${vote.voter.address}\n` +
+                  `Voter Address: ${vote.voter.address}\n` +
                   `Proposal ID: ${vote.proposal.id}`
           }));
 
