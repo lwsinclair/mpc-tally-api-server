@@ -23,9 +23,22 @@ export async function listProposals(
       };
     }
 
-    const response = await client.request<ProposalsResponse>(LIST_PROPOSALS_QUERY, { input: apiInput });
-    return response;
+    console.log('Sending proposals request with input:', JSON.stringify(apiInput, null, 2));
+    const response = await client.request<{ data: ProposalsResponse }>(LIST_PROPOSALS_QUERY, { input: apiInput });
+    console.log('Raw proposals response:', JSON.stringify(response, null, 2));
+
+    if (!response?.data?.proposals) {
+      console.error('Invalid response structure:', response);
+      throw new Error('Invalid response structure from API');
+    }
+
+    return response.data;
   } catch (error) {
+    console.error('Error in listProposals:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     throw new Error(`Failed to fetch proposals: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 } 

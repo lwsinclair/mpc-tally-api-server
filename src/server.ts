@@ -248,29 +248,29 @@ export class TallyServer {
         },
         {
           name: "get-address-votes",
-          description: "Returns votes cast by a given address",
+          description: "Get votes cast by an address for a specific organization",
           inputSchema: {
             type: "object",
             required: ["address", "organizationSlug"],
             properties: {
               address: {
                 type: "string",
-                description: "The Ethereum address",
+                description: "The address to get votes for"
               },
               organizationSlug: {
                 type: "string",
-                description: "The organization's slug (e.g., 'uniswap')",
+                description: "The organization slug to get votes from"
               },
               limit: {
                 type: "number",
-                description: "Maximum number of votes to return (default: 20, max: 50)",
+                description: "Maximum number of votes to return (default: 20)"
               },
               afterCursor: {
                 type: "string",
-                description: "Cursor for pagination",
-              },
-            },
-          },
+                description: "Cursor for pagination"
+              }
+            }
+          }
         },
         {
           name: "get-address-created-proposals",
@@ -667,8 +667,28 @@ export class TallyServer {
             throw new Error('organizationSlug must be a string');
           }
 
-          const result = await this.service.getAddressVotes(args);
+          console.log('Server: Calling getAddressVotes with args:', args);
+          const result = await this.service.getAddressVotes({
+            address: args.address,
+            organizationSlug: args.organizationSlug,
+            limit: typeof args.limit === 'number' ? args.limit : undefined,
+            afterCursor: typeof args.afterCursor === 'string' ? args.afterCursor : undefined
+          });
+          console.log('Server: Raw result from getAddressVotes:', JSON.stringify(result, null, 2));
 
+          // Note: result is { votes: VotesResponse }
+          if (!result?.votes?.nodes) {
+            console.log('Server: Invalid result structure, returning empty response');
+            return {
+              content: [],
+              pageInfo: {
+                firstCursor: null,
+                lastCursor: null
+              }
+            };
+          }
+
+          console.log('Server: Mapping votes to content...');
           const content: TextContent[] = result.votes.nodes.map(vote => ({
             type: "text",
             text: `Vote Details:
@@ -678,12 +698,17 @@ Amount: ${vote.amount}
 Voter Address: ${vote.voter.address}
 Proposal ID: ${vote.proposal.id}`
           }));
+          console.log('Server: Generated content:', content);
 
           return {
             content,
-            pageInfo: result.votes.pageInfo
+            pageInfo: {
+              firstCursor: result.votes.pageInfo.firstCursor || null,
+              lastCursor: result.votes.pageInfo.lastCursor || null
+            }
           };
         } catch (error) {
+          console.error('Server: Error in get-address-votes handler:', error);
           throw new Error(`Error fetching address votes: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
       }
@@ -794,25 +819,4 @@ Proposal ID: ${vote.proposal.id}`
               type: "text",
               text: `Governances for ${args.address}:\n\n` +
                 result.account.delegatedGovernors.map(gov => 
-                  `- Name: ${gov.name}\n` +
-                  `  Type: ${gov.type}\n`
-                ).join('\n\n')
-            }
-          ];
-
-          return { content };
-        } catch (error) {
-          throw new Error(`Error fetching address governances: ${error instanceof Error ? error.message : 'Unknown error'}`);
-        }
-      }
-
-      throw new Error(`Unknown tool: ${name}`);
-    });
-  }
-
-  async start() {
-    const transport = new StdioServerTransport();
-    await this.server.connect(transport);
-    console.error("Tally MCP Server running on stdio");
-  }
-}
+                  `- Name: ${gov.name}\n`

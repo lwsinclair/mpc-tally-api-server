@@ -41,15 +41,40 @@ export enum VoteType {
   PendingFor = 'pendingfor'
 }
 
+export interface Block {
+  timestamp: string;
+  number: number;
+}
+
+export interface Account {
+  id: string;
+  address: string;
+  name?: string;
+  picture?: string;
+  twitter?: string;
+}
+
 export interface Vote {
   id: string;
-  type: VoteType;
-  amount: string;
-  voter: {
-    address: string;
-  };
+  amount: string;  // Uint256 represented as string
+  block: Block;
+  chainId: string; // ChainID represented as string
+  isBridged?: boolean;
   proposal: {
     id: string;
+  };
+  reason?: string;
+  type: VoteType;  // Using our existing VoteType enum
+  txHash: string;  // Hash represented as string
+  voter: Account;
+}
+
+export interface VotesResponse {
+  nodes: Vote[];
+  pageInfo: {
+    firstCursor: string;
+    lastCursor: string;
+    count: number;
   };
 }
 
@@ -205,11 +230,4 @@ export interface GetAddressReceivedDelegationsOutput {
   nodes: DelegationNode[];
   pageInfo: PageInfo;
   totalCount: number;
-}
-
-export interface PageInfo {
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
-  startCursor: string | null;
-  endCursor: string | null;
 } 

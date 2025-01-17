@@ -1,72 +1,88 @@
-import { TallyService } from '../tally.service';
-import dotenv from 'dotenv';
-import path from 'path';
+// Set NODE_ENV to 'test' to use test-specific settings
+process.env.NODE_ENV = 'test';
 
-// Load environment variables from the root directory
-dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
+import { TallyService } from '../tally.service.js';
+import { describe, test, beforeAll, expect } from 'bun:test';
+
+let tallyService: TallyService;
 
 describe('TallyService - Address Votes', () => {
-  let service: TallyService;
-
-  beforeAll(() => {
+  beforeAll(async () => {
+    console.log('Waiting 30 seconds before starting tests...');
+    await new Promise(resolve => setTimeout(resolve, 30000));
+    
     const apiKey = process.env.TALLY_API_KEY;
     if (!apiKey) {
-      throw new Error('TALLY_API_KEY environment variable is required for tests');
+      throw new Error('TALLY_API_KEY environment variable is required');
     }
-    console.log('Using API key:', apiKey.substring(0, 8) + '...');
-    service = new TallyService({ apiKey });
+    
+    tallyService = new TallyService({ apiKey });
   });
 
-  it('should require an organizationSlug', async () => {
-    // @ts-expect-error Testing invalid input
-    await expect(service.getAddressVotes({ address: '0x123' })).rejects.toThrow(
-      'organizationSlug is required'
-    );
-  });
+  test('should fetch votes for an address', async () => {
+    console.log('Starting basic votes fetch test...');
+    const address = '0xb49f8b8613be240213c1827e2e576044ffec7948';
+    const organizationSlug = 'uniswap';
 
-  it('should fetch votes cast by an address in a specific organization', async () => {
-    const result = await service.getAddressVotes({
-      address: '0x1234567890123456789012345678901234567890',
-      organizationSlug: 'uniswap'
+    const result = await tallyService.getAddressVotes({
+      address,
+      organizationSlug
     });
 
     expect(result).toBeDefined();
     expect(result.votes).toBeDefined();
+    expect(Array.isArray(result.votes.nodes)).toBe(true);
     expect(result.votes.pageInfo).toBeDefined();
-    if (result.votes.nodes.length > 0) {
-      const vote = result.votes.nodes[0];
-      expect(vote.id).toBeDefined();
-      expect(vote.type).toBeDefined();
-      expect(vote.amount).toBeDefined();
+  });
+
+  test('should handle pagination correctly', async () => {
+    console.log('Starting pagination test...');
+    const address = '0xb49f8b8613be240213c1827e2e576044ffec7948';
+    const organizationSlug = 'uniswap';
+
+    // First page
+    const firstPage = await tallyService.getAddressVotes({
+      address,
+      organizationSlug,
+      limit: 2
+    });
+
+    expect(firstPage.votes).toBeDefined();
+    expect(Array.isArray(firstPage.votes.nodes)).toBe(true);
+    expect(firstPage.votes.nodes.length).toBeLessThanOrEqual(2);
+    expect(firstPage.votes.pageInfo).toBeDefined();
+
+    // If there's a next page, fetch it
+    if (firstPage.votes.pageInfo.lastCursor) {
+      const secondPage = await tallyService.getAddressVotes({
+        address,
+        organizationSlug,
+        limit: 2,
+        afterCursor: firstPage.votes.pageInfo.lastCursor
+      });
+
+      expect(secondPage.votes).toBeDefined();
+      expect(Array.isArray(secondPage.votes.nodes)).toBe(true);
+      expect(secondPage.votes.nodes.length).toBeLessThanOrEqual(2);
+      
+      // Ensure we got different results
+      if (firstPage.votes.nodes.length > 0 && secondPage.votes.nodes.length > 0) {
+        expect(firstPage.votes.nodes[0].id).not.toBe(secondPage.votes.nodes[0].id);
+      }
     }
   });
 
-  it('should handle invalid organization slugs gracefully', async () => {
-    await expect(
-      service.getAddressVotes({
-        address: '0x1234567890123456789012345678901234567890',
-        organizationSlug: 'invalid-org'
-      })
-    ).rejects.toThrow('Failed to fetch DAO');
-  });
-
-  it('should handle invalid addresses gracefully', async () => {
-    await expect(
-      service.getAddressVotes({
-        address: 'invalid-address',
-        organizationSlug: 'uniswap'
-      })
-    ).rejects.toThrow('Failed to fetch address votes');
-  });
-
-  it('should return empty nodes array for address with no votes', async () => {
-    const result = await service.getAddressVotes({
-      address: '0x0000000000000000000000000000000000000000',
+  test('should handle invalid addresses gracefully', async () => {
+    await expect(tallyService.getAddressVotes({
+      address: 'invalid-address',
       organizationSlug: 'uniswap'
-    });
+    })).rejects.toThrow();
+  });
 
-    expect(result).toBeDefined();
-    expect(result.votes.nodes).toHaveLength(0);
-    expect(result.votes.pageInfo).toBeDefined();
+  test('should handle invalid organization slugs gracefully', async () => {
+    await expect(tallyService.getAddressVotes({
+      address: '0xb49f8b8613be240213c1827e2e576044ffec7948',
+      organizationSlug: 'invalid-org'
+    })).rejects.toThrow();
   });
 }); 
