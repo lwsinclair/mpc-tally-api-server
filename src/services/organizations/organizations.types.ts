@@ -44,6 +44,11 @@ export interface Organization {
   chainIds: string[];
   tokenIds: string[];
   governorIds: string[];
+  proposalsCount: number;
+  tokenOwnersCount: number;
+  delegatesCount: number;
+  delegatesVotesCount: string;
+  hasActiveProposals: boolean;
   metadata: {
     description: string;
     icon: string;
@@ -53,18 +58,12 @@ export interface Organization {
       twitter: string;
     }
   };
-  stats: {
-    proposalsCount: number;
-    tokenOwnersCount: number;
-    delegatesCount: number;
-    delegatesVotesCount: string;
-    hasActiveProposals: boolean;
-  }
 }
 
 export interface PageInfo {
   firstCursor: string | null;
   lastCursor: string | null;
+  count: number;
 }
 
 export interface OrganizationsResponse {

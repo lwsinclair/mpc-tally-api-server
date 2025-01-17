@@ -14,13 +14,17 @@ import { getAddressCreatedProposals } from './addresses/getAddressCreatedProposa
 import { getAddressMetadata } from './addresses/getAddressMetadata.js';
 import { getAddressGovernances } from './addresses/getAddressGovernances.js';
 import { getAddressReceivedDelegations } from './addresses/getAddressReceivedDelegations.js';
+import { getDelegateStatement } from './delegates/getDelegateStatement.js';
 import type { 
   Organization,
   OrganizationsResponse,
   ListDAOsParams,
+  PageInfo,
 } from './organizations/organizations.types.js';
 import type { Delegate } from './delegates/delegates.types.js';
-import type { Delegation, GetDelegatorsParams } from './delegators/delegators.types.js';
+import type { Delegation, GetDelegatorsParams, TokenInfo } from './delegators/delegators.types.js';
+import type { GetAddressReceivedDelegationsInput } from './addresses/addresses.types.js';
+import type { DelegateStatement } from './delegates/delegates.types.js';
 import type { 
   ProposalsInput,
   ProposalsResponse,
@@ -52,14 +56,36 @@ import type {
   AddressMetadataResponse,
   AddressGovernancesInput,
   AddressGovernancesResponse,
-  GetAddressReceivedDelegationsInput,
-  GetAddressReceivedDelegationsOutput,
 } from './addresses/addresses.types.js';
 
 export interface TallyServiceConfig {
   apiKey: string;
   baseUrl?: string;
 }
+
+export interface GetAddressReceivedDelegationsOutput {
+  nodes: Array<{
+    id: string;
+    votes: string;
+    delegator: {
+      id: string;
+      address: string;
+    };
+  }>;
+  pageInfo: {
+    firstCursor: string | null;
+    lastCursor: string | null;
+    count: number;
+  };
+  totalCount: number;
+}
+
+export type GetDelegateStatementInput = {
+  address: string;
+} & (
+  | { governorId: string; organizationSlug?: never }
+  | { organizationSlug: string; governorId?: never }
+);
 
 export class TallyService {
   private client: GraphQLClient;
@@ -166,6 +192,80 @@ export class TallyService {
     return getAddressReceivedDelegations(this.client, input);
   }
 
+  async getDelegateStatement(input: GetDelegateStatementInput): Promise<DelegateStatement | null> {
+    return getDelegateStatement(this.client, input);
+  }
+
+  /**
+   * Format a vote amount considering token decimals
+   * @param {string} votes - The raw vote amount
+   * @param {TokenInfo} token - Optional token info containing decimals and symbol
+   * @returns {string} Formatted vote amount with optional symbol
+   */
+  private static formatVotes(votes: string, token?: TokenInfo): string {
+    const val = BigInt(votes);
+    const decimals = token?.decimals ?? 18;
+    const denominator = BigInt(10 ** decimals);
+    const formatted = (Number(val) / Number(denominator)).toLocaleString();
+    return `${formatted}${token?.symbol ? ` ${token.symbol}` : ''}`;
+  }
+
+  static formatDAOList(daos: Organization[]): string {
+    return `Found ${daos.length} DAOs:\n\n` + 
+      daos.map(dao => 
+        `${dao.name} (${dao.slug})\n` +
+        `Token Holders: ${dao.tokenOwnersCount}\n` +
+        `Delegates: ${dao.delegatesCount}\n` +
+        `Proposals: ${dao.proposalsCount}\n` +
+        `Active Proposals: ${dao.hasActiveProposals ? 'Yes' : 'No'}\n` +
+        `Description: ${dao.metadata?.description || 'No description available'}\n` +
+        `Website: ${dao.metadata?.socials?.website || 'N/A'}\n` +
+        `Twitter: ${dao.metadata?.socials?.twitter || 'N/A'}\n` +
+        `Discord: ${dao.metadata?.socials?.discord || 'N/A'}\n` +
+        '---'
+      ).join('\n\n');
+  }
+
+  static formatDAO(dao: Organization): string {
+    return `${dao.name} (${dao.slug})\n` +
+      `Token Holders: ${dao.tokenOwnersCount}\n` +
+      `Delegates: ${dao.delegatesCount}\n` +
+      `Proposals: ${dao.proposalsCount}\n` +
+      `Active Proposals: ${dao.hasActiveProposals ? 'Yes' : 'No'}\n` +
+      `Description: ${dao.metadata?.description || 'No description available'}\n` +
+      `Website: ${dao.metadata?.socials?.website || 'N/A'}\n` +
+      `Twitter: ${dao.metadata?.socials?.twitter || 'N/A'}\n` +
+      `Discord: ${dao.metadata?.socials?.discord || 'N/A'}\n` +
+      `Chain IDs: ${dao.chainIds.join(', ')}\n` +
+      `Token IDs: ${dao.tokenIds?.join(', ') || 'N/A'}\n` +
+      `Governor IDs: ${dao.governorIds?.join(', ') || 'N/A'}`;
+  }
+
+  static formatDelegatesList(delegates: Delegate[]): string {
+    return `Found ${delegates.length} delegates:\n\n` +
+      delegates.map(delegate =>
+        `${delegate.account.name || delegate.account.address}\n` +
+        `Address: ${delegate.account.address}\n` +
+        `Votes: ${delegate.votesCount}\n` +
+        `Delegators: ${delegate.delegatorsCount}\n` +
+        `Bio: ${delegate.account.bio || 'No bio available'}\n` +
+        `Statement: ${delegate.statement?.statementSummary || 'No statement available'}\n` +
+        '---'
+      ).join('\n\n');
+  }
+
+  static formatDelegatorsList(delegators: Delegation[]): string {
+    return `Found ${delegators.length} delegators:\n\n` +
+      delegators.map(delegation =>
+        `${delegation.delegator.name || delegation.delegator.ens || delegation.delegator.address}\n` +
+        `Address: ${delegation.delegator.address}\n` +
+        `Votes: ${TallyService.formatVotes(delegation.votes, delegation.token)}\n` +
+        `Delegated at: Block ${delegation.blockNumber} (${new Date(delegation.blockTimestamp).toLocaleString()})\n` +
+        `${delegation.token ? `Token: ${delegation.token.symbol} (${delegation.token.name})\n` : ''}` +
+        '---'
+      ).join('\n\n');
+  }
+
   static formatProposal(proposal: any): string {
     return `Proposal: ${proposal.metadata.title}
 ID: ${proposal.id}
@@ -179,7 +279,7 @@ ${proposal.voteStats.map((stat: any) =>
 ).join('\n')}`;
   }
 
-  static formatProposalsList(proposals: ProposalsResponse['proposals']['nodes']): string {
+  static formatProposalsList(proposals: any[]): string {
     return `Found ${proposals.length} proposals:\n\n` +
       proposals.map(proposal =>
         `${proposal.metadata.title}\n` +
