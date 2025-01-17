@@ -206,7 +206,7 @@ describe("MCP Server Tests", () => {
       expect(item.type).toBe("text");
       expect(item.text).toBeDefined();
       
-      // Vote details should include key information
+      // Vote details should include all available fields
       const text = item.text;
       expect(text).toContain("Vote Details:");
       expect(text).toContain("ID:");
@@ -214,6 +214,10 @@ describe("MCP Server Tests", () => {
       expect(text).toContain("Amount:");
       expect(text).toContain("Voter Address:");
       expect(text).toContain("Proposal ID:");
+      expect(text).toContain("Chain ID:");
+      expect(text).toContain("Transaction:");
+      expect(text).toContain("Bridged:");
+      expect(text).toContain("Reason:");
     });
 
     // Verify pagination info

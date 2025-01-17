@@ -667,25 +667,22 @@ export class TallyServer {
             throw new Error('organizationSlug must be a string');
           }
 
-          const result = await this.service.getAddressVotes({
-            address: args.address,
-            organizationSlug: args.organizationSlug,
-            limit: args.limit,
-            afterCursor: args.afterCursor,
-          });
-
-          const content: TextContent[] = result.votes.nodes.map(vote => ({
-            type: "text",
-            text: `Vote Details:\n` +
-                  `ID: ${vote.id}\n` +
-                  `Type: ${vote.type}\n` +
-                  `Amount: ${vote.amount}\n` +
-                  `Voter Address: ${vote.voter.address}\n` +
-                  `Proposal ID: ${vote.proposal.id}`
-          }));
+          const result = await this.service.getAddressVotes(args);
 
           return {
-            content,
+            content: result.votes.nodes.map(vote => ({
+              type: "text",
+              text: `Vote Details:
+ID: ${vote.id}
+Type: ${vote.type}
+Amount: ${vote.amount}
+Voter Address: ${vote.voter.address}
+Proposal ID: ${vote.proposal.id}
+Chain ID: ${vote.chainId}
+Transaction: ${vote.txHash}
+Bridged: ${vote.isBridged === null ? 'No' : vote.isBridged}
+Reason: ${vote.reason || 'No reason provided'}`
+            })),
             pageInfo: result.votes.pageInfo
           };
         } catch (error) {
