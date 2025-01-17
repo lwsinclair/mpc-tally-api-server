@@ -56,7 +56,8 @@ export async function getAddressVotes(
           voter: input.address
         },
         page: {
-          limit: input.limit || 20
+          limit: input.limit || 20,
+          afterCursor: input.afterCursor
         }
       }
     });

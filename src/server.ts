@@ -669,20 +669,18 @@ export class TallyServer {
 
           const result = await this.service.getAddressVotes(args);
 
-          return {
-            content: result.votes.nodes.map(vote => ({
-              type: "text",
-              text: `Vote Details:
+          const content: TextContent[] = result.votes.nodes.map(vote => ({
+            type: "text",
+            text: `Vote Details:
 ID: ${vote.id}
 Type: ${vote.type}
 Amount: ${vote.amount}
 Voter Address: ${vote.voter.address}
-Proposal ID: ${vote.proposal.id}
-Chain ID: ${vote.chainId}
-Transaction: ${vote.txHash}
-Bridged: ${vote.isBridged === null ? 'No' : vote.isBridged}
-Reason: ${vote.reason || 'No reason provided'}`
-            })),
+Proposal ID: ${vote.proposal.id}`
+          }));
+
+          return {
+            content,
             pageInfo: result.votes.pageInfo
           };
         } catch (error) {

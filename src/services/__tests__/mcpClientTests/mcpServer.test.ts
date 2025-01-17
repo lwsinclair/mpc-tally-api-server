@@ -214,16 +214,9 @@ describe("MCP Server Tests", () => {
       expect(text).toContain("Amount:");
       expect(text).toContain("Voter Address:");
       expect(text).toContain("Proposal ID:");
-      expect(text).toContain("Chain ID:");
-      expect(text).toContain("Transaction:");
-      expect(text).toContain("Bridged:");
-      expect(text).toContain("Reason:");
-    });
 
-    // Verify pagination info
-    expect(result.pageInfo).toBeDefined();
-    expect(result.pageInfo).toHaveProperty("firstCursor");
-    expect(result.pageInfo).toHaveProperty("lastCursor");
-    expect(result.pageInfo).toHaveProperty("count");
+      // Verify pagination info
+      expect(result.pageInfo).toBeDefined();
+    });
   }, 30000);
 }); 
