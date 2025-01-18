@@ -28,8 +28,11 @@ export async function getProposal(
       };
     }
 
-    const response = await client.request<ProposalDetailsResponse>(GET_PROPOSAL_QUERY, { input: apiInput });
-    return { data: response };
+    const response = await client.request<GetProposalResponse>(GET_PROPOSAL_QUERY, { input: apiInput });
+    if (!response?.data?.proposal) {
+      throw new Error('Invalid response structure from API');
+    }
+    return response;
   } catch (error) {
     throw new Error(`Failed to fetch proposal: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }

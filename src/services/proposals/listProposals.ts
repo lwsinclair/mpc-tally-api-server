@@ -41,16 +41,16 @@ export async function listProposals(
     }
 
     console.log('Input structure:', inspect(getObjectStructure(apiInput), { colors: true }));
-    const response = await client.request<ProposalsResponse>(LIST_PROPOSALS_QUERY, { input: apiInput });
+    const response = await client.request<ListProposalsResponse>(LIST_PROPOSALS_QUERY, { input: apiInput });
     
     console.log('Response structure:', inspect(getObjectStructure(response), { colors: true }));
 
-    if (!response?.proposals?.nodes) {
+    if (!response?.data?.proposals?.nodes) {
       console.error('Invalid response structure:', inspect(getObjectStructure(response), { colors: true }));
       throw new Error('Invalid response structure from API');
     }
 
-    return { data: response };
+    return response;
   } catch (error) {
     console.error('Error in listProposals:', error);
     if (error instanceof Error) {
