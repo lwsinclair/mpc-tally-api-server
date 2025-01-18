@@ -43,18 +43,24 @@ async function getVotesForAddress(
     }
 
     return {
-      nodes: response.votes.nodes,
+      nodes: response.votes.nodes.map(vote => ({
+        id: vote.id,
+        type: vote.type,
+        amount: vote.amount,
+        voter: { id: vote.voter.id, address: vote.voter.address },
+        proposal: { id: vote.proposal.id },
+        block: vote.block,
+        chainId: vote.chainId,
+        txHash: vote.txHash
+      })),
       pageInfo: {
         firstCursor: response.votes.pageInfo.firstCursor || '',
         lastCursor: response.votes.pageInfo.lastCursor || '',
         count: response.votes.pageInfo.count || 0
       }
     };
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new TallyAPIError(`Failed to fetch votes: ${error.message}`);
-    }
-    throw new TallyAPIError('Failed to fetch votes: Unknown error');
+  } catch (error: any) {
+    throw new TallyAPIError(`Failed to fetch votes: ${error.message}`);
   }
 }
 
@@ -70,7 +76,7 @@ export async function getAddressVotes(
       throw new TallyAPIError('Organization not found');
     }
 
-    // Get proposal IDs for the organization
+    // Get all proposals for the organization
     const proposalsResponse = await listProposals(client, {
       filters: {
         organizationId: dao.id
@@ -80,7 +86,7 @@ export async function getAddressVotes(
       }
     });
 
-    if (!proposalsResponse?.data?.proposals?.nodes?.length) {
+    if (!proposalsResponse?.proposals?.nodes?.length) {
       return {
         votes: {
           nodes: [],
@@ -93,8 +99,8 @@ export async function getAddressVotes(
       };
     }
 
-    // Get votes for each proposal
-    const proposalIds = proposalsResponse.data.proposals.nodes.map(proposal => proposal.id);
+    // Extract proposal IDs
+    const proposalIds = proposalsResponse.proposals.nodes.map(proposal => proposal.id);
 
     // Get votes for these proposals
     const votesResponse = await getVotesForAddress(
@@ -106,10 +112,7 @@ export async function getAddressVotes(
     );
 
     return { votes: votesResponse };
-  } catch (error) {
-    if (error instanceof Error) {
-      throw new TallyAPIError(`Error fetching address votes: ${error.message}`);
-    }
-    throw new TallyAPIError('Error fetching address votes: Unknown error');
+  } catch (error: any) {
+    throw new TallyAPIError(`Error fetching address votes: ${error.message}`);
   }
 }
