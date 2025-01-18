@@ -76,7 +76,7 @@ export async function getAddressVotes(
       throw new TallyAPIError('Organization not found');
     }
 
-    // Get all proposals for the organization
+    // Get proposal IDs for the organization
     const proposalsResponse = await listProposals(client, {
       filters: {
         organizationId: dao.id
@@ -86,21 +86,21 @@ export async function getAddressVotes(
       }
     });
 
-    if (!proposalsResponse?.proposals?.nodes?.length) {
+    if (!proposalsResponse?.data?.proposals?.nodes?.length) {
       return {
         votes: {
           nodes: [],
           pageInfo: {
-            firstCursor: '',
-            lastCursor: '',
+            firstCursor: null,
+            lastCursor: null,
             count: 0
           }
         }
       };
     }
 
-    // Extract proposal IDs
-    const proposalIds = proposalsResponse.proposals.nodes.map(proposal => proposal.id);
+    // Get votes for each proposal
+    const proposalIds = proposalsResponse.data.proposals.nodes.map(proposal => proposal.id);
 
     // Get votes for these proposals
     const votesResponse = await getVotesForAddress(
