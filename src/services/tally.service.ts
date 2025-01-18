@@ -27,10 +27,12 @@ import type { GetAddressReceivedDelegationsInput } from './addresses/addresses.t
 import type {
   ProposalsInput,
   ProposalsResponse,
+  Proposal,
 } from './proposals/listProposals.types.js';
 import type {
   ProposalInput,
   ProposalDetailsResponse,
+  ProposalDetails,
 } from './proposals/getProposal.types.js';
 import type {
   GetProposalVotersInput,
