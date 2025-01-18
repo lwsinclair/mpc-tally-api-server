@@ -22,16 +22,16 @@ import type {
   ListDAOsParams,
   PageInfo,
 } from './organizations/organizations.types.js';
-import type { Delegate } from './delegates/delegates.types.js';
 import type { Delegation, GetDelegatorsParams, TokenInfo } from './delegators/delegators.types.js';
 import type { GetAddressReceivedDelegationsInput } from './addresses/addresses.types.js';
-import type { DelegateStatement } from './delegates/delegates.types.js';
-import type { 
+import type {
   ProposalsInput,
   ProposalsResponse,
+} from './proposals/listProposals.types.js';
+import type {
   ProposalInput,
   ProposalDetailsResponse,
-} from './proposals/index.js';
+} from './proposals/getProposal.types.js';
 import type {
   GetProposalVotersInput,
   ProposalVotersResponse,
@@ -45,12 +45,12 @@ import type {
   ProposalSecurityAnalysisResponse,
 } from './proposals/getProposalSecurityAnalysis.types.js';
 import type {
+  AddressVotesInput,
+  AddressVotesResponse,
   AddressProposalsInput,
   AddressProposalsResponse,
   AddressDAOProposalsInput,
   AddressDAOProposalsResponse,
-  AddressVotesInput,
-  AddressVotesResponse,
   AddressCreatedProposalsInput,
   AddressCreatedProposalsResponse,
   AddressMetadataInput,
@@ -58,6 +58,20 @@ import type {
   AddressGovernancesInput,
   AddressGovernancesResponse,
 } from './addresses/addresses.types.js';
+import type { 
+  DelegateStatement,
+  Delegate,
+  DelegatesResponse,
+  ListDelegatesInput as DelegatesInput,
+} from './delegates/delegates.types.js';
+
+// Use discriminated union for delegate statement input
+type GetDelegateStatementInput = {
+  address: string;
+} & (
+  | { governorId: string; organizationSlug?: never }
+  | { organizationSlug: string; governorId?: never }
+);
 
 export interface TallyServiceConfig {
   apiKey: string;
@@ -80,13 +94,6 @@ export interface GetAddressReceivedDelegationsOutput {
   };
   totalCount: number;
 }
-
-export type GetDelegateStatementInput = {
-  address: string;
-} & (
-  | { governorId: string; organizationSlug?: never }
-  | { organizationSlug: string; governorId?: never }
-);
 
 export class TallyService {
   private client: GraphQLClient;
@@ -112,8 +119,14 @@ export class TallyService {
     return listDAOs(this.client, params);
   }
 
-  async listDelegates(input: any) {
-    return listDelegates(this.client, input);
+  async listDelegates(input: DelegatesInput): Promise<DelegatesResponse> {
+    const response = await listDelegates(this.client, input);
+    return {
+      delegates: {
+        nodes: response.delegates,
+        pageInfo: response.pageInfo
+      }
+    };
   }
 
   async getProposal(input: ProposalInput): Promise<ProposalDetailsResponse> {
@@ -194,6 +207,9 @@ export class TallyService {
   }
 
   async getDelegateStatement(input: GetDelegateStatementInput): Promise<DelegateStatement | null> {
+    if (!input.address) {
+      throw new Error('address is required');
+    }
     return getDelegateStatement(this.client, input);
   }
 
@@ -255,12 +271,14 @@ export class TallyService {
   static formatDelegatesList(delegates: Delegate[]): string {
     return `Found ${delegates.length} delegates:\n\n` +
       delegates.map(delegate =>
-        `${delegate.account.name || delegate.account.address}\n` +
-        `Address: ${delegate.account.address}\n` +
+        `${delegate.name || delegate.address}\n` +
+        `Address: ${delegate.address}\n` +
         `Votes: ${delegate.votesCount}\n` +
         `Delegators: ${delegate.delegatorsCount}\n` +
-        `Bio: ${delegate.account.bio || 'No bio available'}\n` +
-        `Statement: ${delegate.statement?.statementSummary || 'No statement available'}\n` +
+        `Governor: ${delegate.governor.name}\n` +
+        `Organization: ${delegate.governor.organization.name}\n` +
+        `Statement: ${delegate.statement?.statement || 'No statement available'}\n` +
+        `Seeking Delegation: ${delegate.isSeekingDelegation ? 'Yes' : 'No'}\n` +
         '---'
       ).join('\n\n');
   }
