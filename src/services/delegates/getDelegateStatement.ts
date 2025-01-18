@@ -24,6 +24,8 @@ const GET_DELEGATE_STATEMENT_QUERY = gql`
         statement
         statementSummary
         isSeekingDelegation
+        discourseUsername
+        discourseProfileLink
         issues {
           id
           name
@@ -45,31 +47,54 @@ export async function getDelegateStatement(
   client: GraphQLClient,
   input: GetDelegateStatementInput
 ): Promise<DelegateStatement | null> {
+  // Input validation first
+  if (!input.address) {
+    throw new ValidationError('Address is required');
+  }
+
+  // Validate that only one of governorId or organizationSlug is provided
+  if ('governorId' in input && 'organizationSlug' in input && input.governorId && input.organizationSlug) {
+    throw new ValidationError('Cannot provide both governorId and organizationSlug');
+  }
+
+  if (!('governorId' in input) && !('organizationSlug' in input)) {
+    throw new ValidationError('Either governorId or organizationSlug is required');
+  }
+
+  // Validate address format
+  if (!/^0x[a-fA-F0-9]{40}$/.test(input.address)) {
+    throw new ValidationError('Invalid address format');
+  }
+
   let retries = 0;
-  let lastError: Error | null = null;
 
   while (retries < MAX_RETRIES) {
     try {
-      if (!input.address) {
-        throw new ValidationError('Address is required');
-      }
-
       let governorId: string;
       let organizationId: string;
 
       if ('governorId' in input && input.governorId) {
+        // Validate governor ID format
+        if (!/^eip155:\d+:0x[a-fA-F0-9]{40}$/.test(input.governorId)) {
+          throw new ValidationError('Invalid governor ID format');
+        }
         governorId = input.governorId;
       } else if ('organizationSlug' in input && input.organizationSlug) {
         // Wait for rate limit before getDAO request
         await globalRateLimiter.waitForRateLimit();
-        const dao = await getDAO(client, input.organizationSlug);
-        if (!dao.governorIds?.length) {
-          throw new ResourceNotFoundError('Organization or governor', input.organizationSlug);
+        try {
+          const dao = await getDAO(client, input.organizationSlug);
+          if (!dao.governorIds?.length) {
+            return null;
+          }
+          governorId = dao.governorIds[0];
+          organizationId = dao.id;
+        } catch (error) {
+          if (error instanceof ResourceNotFoundError) {
+            return null;
+          }
+          throw error;
         }
-        governorId = dao.governorIds[0];
-        organizationId = dao.id;
-      } else {
-        throw new ValidationError('Either governorId or organizationSlug is required');
       }
 
       // Wait for rate limit before delegate statement request
@@ -98,9 +123,10 @@ export async function getDelegateStatement(
         return null;
       }
 
+      // Return the statement without strict validation
       return response.delegate.statement;
+
     } catch (error) {
-      lastError = error;
       if (error instanceof GraphQLError) {
         const graphqlError = error as GraphQLError;
         
@@ -119,21 +145,34 @@ export async function getDelegateStatement(
 
         // Handle other GraphQL errors
         if (graphqlError.response?.errors) {
-          lastError = graphqlError.response.errors[0];
-          if (lastError.message.includes('not found')) {
+          const errorMessage = graphqlError.response.errors[0]?.message;
+          if (errorMessage?.includes('not found')) {
             return null;
           }
+          if (errorMessage?.includes('not valid')) {
+            throw new ValidationError(errorMessage);
+          }
         }
+      }
 
-        throw new GraphQLRequestError(
-          `GraphQL error: ${lastError?.message}`,
-          'GetDelegateStatement',
-          variables
-        );
+      // If we've reached here and it's already a known error type, rethrow it
+      if (error instanceof ValidationError || 
+          error instanceof ResourceNotFoundError || 
+          error instanceof RateLimitError ||
+          error instanceof TallyAPIError) {
+        throw error;
       }
       
-      // If we've reached here, it's an unexpected error
-      throw new TallyAPIError(`Failed to fetch delegate statement: ${lastError?.message}`);
+      // Otherwise, wrap it in a ValidationError for invalid inputs
+      if (error instanceof Error && 
+          (error.message.includes('not valid') || 
+           error.message.includes('invalid') || 
+           error.message.includes('not found'))) {
+        throw new ValidationError(error.message);
+      }
+
+      // For any other unexpected errors
+      throw new TallyAPIError(`Failed to fetch delegate statement: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
