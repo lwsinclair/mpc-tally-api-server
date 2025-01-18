@@ -3,42 +3,9 @@ import { GET_ADDRESS_VOTES_QUERY } from './addresses.queries.js';
 import { AddressVotesInput, VotesResponse, Vote } from './addresses.types.js';
 import { getDAO } from '../organizations/getDAO.js';
 import { listProposals } from '../proposals/listProposals.js';
-import { globalRateLimiter } from '../utils/rateLimiter.js';
-import { TallyAPIError, ValidationError } from '../errors/apiErrors.js';
+import { TallyAPIError } from '../errors/apiErrors.js';
 
-async function getProposalIds(client: GraphQLClient, organizationId: string): Promise<string[]> {
-  try {
-    console.log('Fetching proposals for organization:', organizationId);
-    console.log('Using client with headers:', client.requestConfig.headers);
-    
-    const response = await listProposals(client, {
-      filters: {
-        organizationId,
-      },
-    });
-
-    console.log('Raw proposals response:', JSON.stringify(response, null, 2));
-
-    // Check if response has the expected structure
-    if (!response?.proposals?.nodes) {
-      console.error('Invalid proposals response structure:', response);
-      throw new Error('Invalid proposals response structure');
-    }
-
-    const proposalIds = response.proposals.nodes.map((proposal) => proposal.id);
-    console.log('Found proposal IDs:', proposalIds);
-    return proposalIds;
-  } catch (error) {
-    console.error('Error in getProposalIds:', error);
-    if (error instanceof Error) {
-      console.error('Error details:', error.message);
-      console.error('Error stack:', error.stack);
-    }
-    throw error;
-  }
-}
-
-async function getVotesPage(
+async function getVotesForAddress(
   client: GraphQLClient,
   address: string,
   proposalIds: string[],
@@ -47,24 +14,24 @@ async function getVotesPage(
 ): Promise<VotesResponse> {
   const variables = {
     input: {
-      proposalIds,
-      voter: address,
-      limit,
-      afterCursor,
+      filters: {
+        voter: address,
+        proposalIds
+      },
+      page: {
+        limit: limit || 20,
+        afterCursor
+      }
     },
   };
 
   try {
-    console.log('Fetching votes with variables:', JSON.stringify(variables, null, 2));
     const response = await client.request<{ votes: { nodes: Vote[]; pageInfo: VotesResponse['pageInfo'] } }>(
       GET_ADDRESS_VOTES_QUERY,
       variables
     );
-    console.log('Raw votes response:', JSON.stringify(response, null, 2));
 
-    // Handle empty response
     if (!response?.votes?.nodes) {
-      console.log('No votes found, returning empty response');
       return {
         nodes: [],
         pageInfo: {
@@ -75,20 +42,17 @@ async function getVotesPage(
       };
     }
 
-    // Map the response to our expected format
-    const nodes = response.votes.nodes.map(vote => ({
-      id: vote.id,
-      type: vote.type,
-      amount: vote.amount,
-      voter: { address: vote.voter.address },
-      proposal: { id: vote.proposal.id },
-      block: vote.block, // Add this
-      chainId: vote.chainId, // Add this
-      txHash: vote.txHash // Add this
-    }));
-
     return {
-      nodes,
+      nodes: response.votes.nodes.map(vote => ({
+        id: vote.id,
+        type: vote.type,
+        amount: vote.amount,
+        voter: { id: vote.voter.id, address: vote.voter.address },
+        proposal: { id: vote.proposal.id },
+        block: vote.block,
+        chainId: vote.chainId,
+        txHash: vote.txHash
+      })),
       pageInfo: {
         firstCursor: response.votes.pageInfo.firstCursor || '',
         lastCursor: response.votes.pageInfo.lastCursor || '',
@@ -96,8 +60,7 @@ async function getVotesPage(
       }
     };
   } catch (error: any) {
-    console.error('Error fetching votes:', error);
-    throw new TallyAPIError('Error fetching votes: ' + error.message);
+    throw new TallyAPIError(`Failed to fetch votes: ${error.message}`);
   }
 }
 
@@ -106,24 +69,24 @@ export async function getAddressVotes(
   input: AddressVotesInput
 ): Promise<{ votes: VotesResponse }> {
   try {
-    console.log('getAddressVotes called with input:', input);
-
     // Get the DAO first to get the organization ID
     const dao = await getDAO(client, input.organizationSlug);
-    console.log('Got DAO:', JSON.stringify(dao, null, 2));
-
-    if (!dao || !dao.id) {
-      console.error('Invalid DAO response:', dao);
-      throw new Error('Organization not found');
+    
+    if (!dao?.id) {
+      throw new TallyAPIError('Organization not found');
     }
 
-    // Get proposal IDs for the organization
-    console.log('Getting proposal IDs for organization:', dao.id);
-    const proposalIds = await getProposalIds(client, dao.id);
-    console.log('Got proposal IDs:', proposalIds);
+    // Get all proposals for the organization
+    const proposalsResponse = await listProposals(client, {
+      filters: {
+        organizationId: dao.id
+      },
+      page: {
+        limit: 50 // Get a reasonable number of proposals
+      }
+    });
 
-    if (!proposalIds || proposalIds.length === 0) {
-      console.log('No proposals found for organization');
+    if (!proposalsResponse?.proposals?.nodes?.length) {
       return {
         votes: {
           nodes: [],
@@ -136,30 +99,20 @@ export async function getAddressVotes(
       };
     }
 
-    // Get votes for the address and proposals
-    console.log('Getting votes for address and proposals:', {
-      address: input.address,
-      proposalIds,
-      afterCursor: input.afterCursor,
-      limit: input.limit
-    });
+    // Extract proposal IDs
+    const proposalIds = proposalsResponse.proposals.nodes.map(proposal => proposal.id);
 
-    const votesResponse = await getVotesPage(
+    // Get votes for these proposals
+    const votesResponse = await getVotesForAddress(
       client,
       input.address,
       proposalIds,
-      input.limit || 20,
+      input.limit,
       input.afterCursor
     );
 
-    console.log('Got votes response:', JSON.stringify(votesResponse, null, 2));
     return { votes: votesResponse };
-  } catch (error) {
-    console.error('Error in getAddressVotes:', error);
-    if (error instanceof Error) {
-      console.error('Error details:', error.message);
-      console.error('Error stack:', error.stack);
-    }
-    throw error;
+  } catch (error: any) {
+    throw new TallyAPIError(`Error fetching address votes: ${error.message}`);
   }
-} 
+}

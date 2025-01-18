@@ -28,11 +28,13 @@ import type {
   ProposalsInput,
   ProposalsResponse,
   Proposal,
+  ListProposalsResponse,
 } from './proposals/listProposals.types.js';
 import type {
   ProposalInput,
   ProposalDetailsResponse,
   ProposalDetails,
+  GetProposalResponse,
 } from './proposals/getProposal.types.js';
 import type {
   GetProposalVotersInput,
@@ -109,7 +111,7 @@ export class TallyService {
     });
   }
 
-  async listProposals(input: ProposalsInput & { organizationSlug?: string }): Promise<ProposalsResponse> {
+  async listProposals(input: ProposalsInput & { organizationSlug?: string }): Promise<ListProposalsResponse> {
     return listProposals(this.client, input);
   }
 
@@ -131,7 +133,7 @@ export class TallyService {
     };
   }
 
-  async getProposal(input: ProposalInput): Promise<ProposalDetailsResponse> {
+  async getProposal(input: ProposalInput): Promise<GetProposalResponse> {
     return getProposal(this.client, input);
   }
 

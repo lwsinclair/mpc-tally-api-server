@@ -1,12 +1,29 @@
 import { GraphQLClient } from 'graphql-request';
 import { LIST_PROPOSALS_QUERY } from './proposals.queries.js';
 import { getDAO } from '../organizations/getDAO.js';
-import type { ProposalsInput, ProposalsResponse } from './listProposals.types.js';
+import type { ProposalsInput, ProposalsResponse, ListProposalsResponse } from './listProposals.types.js';
+import { inspect } from 'util';
+
+// Helper function to get object structure
+function getObjectStructure(obj: any): any {
+  if (obj === null) return 'null';
+  if (Array.isArray(obj)) {
+    return obj.length ? [getObjectStructure(obj[0])] : '[]';
+  }
+  if (typeof obj === 'object') {
+    const structure: Record<string, any> = {};
+    for (const key in obj) {
+      structure[key] = getObjectStructure(obj[key]);
+    }
+    return structure;
+  }
+  return typeof obj;
+}
 
 export async function listProposals(
   client: GraphQLClient,
   input: ProposalsInput & { organizationSlug?: string }
-): Promise<ProposalsResponse> {
+): Promise<ListProposalsResponse> {
   try {
     let apiInput: ProposalsInput = { ...input };
     delete (apiInput as any).organizationSlug;  // Remove organizationSlug before API call
@@ -23,16 +40,17 @@ export async function listProposals(
       };
     }
 
-    console.log('Sending proposals request with input:', JSON.stringify(apiInput, null, 2));
-    const response = await client.request<{ data: ProposalsResponse }>(LIST_PROPOSALS_QUERY, { input: apiInput });
-    console.log('Raw proposals response:', JSON.stringify(response, null, 2));
+    console.log('Input structure:', inspect(getObjectStructure(apiInput), { colors: true }));
+    const response = await client.request<ProposalsResponse>(LIST_PROPOSALS_QUERY, { input: apiInput });
+    
+    console.log('Response structure:', inspect(getObjectStructure(response), { colors: true }));
 
-    if (!response?.data?.proposals) {
-      console.error('Invalid response structure:', response);
+    if (!response?.proposals?.nodes) {
+      console.error('Invalid response structure:', inspect(getObjectStructure(response), { colors: true }));
       throw new Error('Invalid response structure from API');
     }
 
-    return response.data;
+    return { data: response };
   } catch (error) {
     console.error('Error in listProposals:', error);
     if (error instanceof Error) {

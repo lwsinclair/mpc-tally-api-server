@@ -18,17 +18,22 @@ export interface ListDelegatesInput {
 // Response Types
 export interface Delegate {
   id: string;
-  account: {
-    address: string;
-    bio?: string;
-    name?: string;
-    picture?: string | null;
+  address: string;
+  name?: string;
+  statement?: DelegateStatement;
+  isSeekingDelegation: boolean;
+  governor: {
+    id: string;
+    name: string;
+    organization: {
+      id: string;
+      name: string;
+      slug: string;
+    };
   };
-  votesCount: string;
+  votes: string;
+  votesCount: number;
   delegatorsCount: number;
-  statement?: {
-    statementSummary?: string;
-  };
 }
 
 export interface DelegatesResponse {
@@ -57,21 +62,19 @@ export interface DelegateStatement {
   id: string;
   address: string;
   statement: string;
-  statementSummary: string;
-  isSeekingDelegation: boolean;
-  issues: Array<{
-    id: string;
-    name: string;
-  }>;
   governor?: {
     id: string;
     name: string;
-    type: string;
+  };
+  organization?: {
+    id: string;
+    name: string;
+    slug: string;
   };
 }
 
 export interface GetDelegateStatementInput {
   address: string;
-  organizationSlug?: string;
   governorId?: string;
+  organizationSlug?: string;
 } 

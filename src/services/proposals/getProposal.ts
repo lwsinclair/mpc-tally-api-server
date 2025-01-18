@@ -1,12 +1,12 @@
 import { GraphQLClient } from 'graphql-request';
 import { GET_PROPOSAL_QUERY } from './proposals.queries.js';
-import type { ProposalInput, ProposalDetailsResponse } from './getProposal.types.js';
+import type { ProposalInput, ProposalDetailsResponse, GetProposalResponse } from './getProposal.types.js';
 import { getDAO } from '../organizations/getDAO.js';
 
 export async function getProposal(
   client: GraphQLClient,
   input: ProposalInput & { organizationSlug?: string }
-): Promise<ProposalDetailsResponse> {
+): Promise<GetProposalResponse> {
   try {
     let apiInput: ProposalInput = { ...input };
     delete (apiInput as any).organizationSlug;  // Remove organizationSlug before API call
@@ -29,7 +29,7 @@ export async function getProposal(
     }
 
     const response = await client.request<ProposalDetailsResponse>(GET_PROPOSAL_QUERY, { input: apiInput });
-    return response;
+    return { data: response };
   } catch (error) {
     throw new Error(`Failed to fetch proposal: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }

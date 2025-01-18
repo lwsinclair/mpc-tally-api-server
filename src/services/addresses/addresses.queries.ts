@@ -104,6 +104,12 @@ export const GET_ADDRESS_VOTES_QUERY = gql`
           proposal {
             id
           }
+          block {
+            timestamp
+            number
+          }
+          chainId
+          txHash
         }
       }
       pageInfo {

@@ -3,6 +3,8 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 import { z } from "zod";
 import { spawn, type ChildProcess } from 'child_process';
 import dotenv from "dotenv";
+import request from 'supertest';
+import { app } from '../../server';
 
 // Load environment variables
 dotenv.config();
@@ -33,13 +35,16 @@ class McpTestClient {
   async start() {
     this.serverProcess = spawn('node', [this.serverPath], {
       env: { ...process.env, TALLY_API_KEY: this.apiKey },
+      stdio: 'inherit'
     });
 
-    this.serverProcess.stdout.on('data', (data) => {
+    
+
+    this.serverProcess.on('data', (data) => {
       console.log(`Server stdout: ${data}`);
     });
 
-    this.serverProcess.stderr.on('data', (data) => {
+    this.serverProcess.on('data', (data) => {
       console.error(`Server stderr: ${data}`);
     });
 
@@ -196,6 +201,7 @@ describe("MCP Server Tests", () => {
       organizationSlug
     });
 
+    console.log("Result:", result);
     // Verify the response structure
     expect(result).toBeDefined();
     expect(result.content).toBeDefined();
@@ -203,6 +209,7 @@ describe("MCP Server Tests", () => {
     
     // Each content item should be a text type with vote details
     result.content.forEach((item: any) => {
+        
       expect(item.type).toBe("text");
       expect(item.text).toBeDefined();
       

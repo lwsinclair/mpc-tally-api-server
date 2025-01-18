@@ -5,7 +5,6 @@ export interface AddressProposalsInput {
   address: string;
   limit?: number;
   afterCursor?: string;
-  beforeCursor?: string;
 }
 
 export interface AddressProposalsResponse {
@@ -17,8 +16,7 @@ export interface AddressProposalsResponse {
 
 export interface AddressDAOProposalsInput {
   address: string;
-  governorId?: string;
-  organizationSlug?: string;
+  organizationSlug: string;
   limit?: number;
   afterCursor?: string;
 }
@@ -49,31 +47,29 @@ export interface Block {
 export interface Account {
   id: string;
   address: string;
-  name?: string;
-  picture?: string;
-  twitter?: string;
 }
 
 export interface Vote {
   id: string;
-  amount: string;  // Uint256 represented as string
-  block: Block;
-  chainId: string; // ChainID represented as string
-  isBridged?: boolean;
+  type: string;
+  amount: string;
+  voter: Account;
   proposal: {
     id: string;
   };
-  reason?: string;
-  type: VoteType;  // Using our existing VoteType enum
-  txHash: string;  // Hash represented as string
-  voter: Account;
+  block: {
+    timestamp: string;
+    number: string;
+  };
+  chainId: string;
+  txHash: string;
 }
 
 export interface VotesResponse {
   nodes: Vote[];
   pageInfo: {
-    firstCursor: string;
-    lastCursor: string;
+    firstCursor: string | null;
+    lastCursor: string | null;
     count: number;
   };
 }
@@ -86,21 +82,13 @@ export interface AddressVotesInput {
 }
 
 export interface AddressVotesResponse {
-  votes: {
-    nodes: Vote[];
-    pageInfo: {
-      firstCursor: string;
-      lastCursor: string;
-      count: number;
-    };
-  };
+  votes: VotesResponse;
 }
 
 export interface AddressCreatedProposalsInput {
   address: string;
   limit?: number;
   afterCursor?: string;
-  beforeCursor?: string;
 }
 
 export interface AddressCreatedProposalsResponse {
@@ -213,7 +201,7 @@ export interface GetAddressReceivedDelegationsInput {
   organizationSlug?: string;
   governorId?: string;
   limit?: number;
-  sortBy?: 'votes';
+  sortBy?: "votes";
   isDescending?: boolean;
 }
 
