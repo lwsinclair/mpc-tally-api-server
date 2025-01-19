@@ -70,7 +70,13 @@ describe('TallyService - Delegate Statement', () => {
       });
 
       // Only verify we get a response without throwing an error
-      expect(result === null || typeof result === 'object').toBe(true);
+      expect(result === null || (
+        typeof result === 'object' &&
+        'statement' in result &&
+        'account' in result &&
+        (result.statement === null || typeof result.statement === 'object') &&
+        (result.account === null || typeof result.account === 'object')
+      )).toBe(true);
     });
 
     test('should handle delegate statement by address and organizationSlug', async () => {
@@ -80,7 +86,13 @@ describe('TallyService - Delegate Statement', () => {
       });
 
       // Only verify we get a response without throwing an error
-      expect(result === null || typeof result === 'object').toBe(true);
+      expect(result === null || (
+        typeof result === 'object' &&
+        'statement' in result &&
+        'account' in result &&
+        (result.statement === null || typeof result.statement === 'object') &&
+        (result.account === null || typeof result.account === 'object')
+      )).toBe(true);
     });
   });
 
@@ -115,7 +127,13 @@ describe('TallyService - Delegate Statement', () => {
       // Only verify we get responses without throwing errors
       const results = await Promise.all(promises);
       results.forEach(result => {
-        expect(result === null || typeof result === 'object').toBe(true);
+        expect(result === null || (
+          typeof result === 'object' &&
+          'statement' in result &&
+          'account' in result &&
+          (result.statement === null || typeof result.statement === 'object') &&
+          (result.account === null || typeof result.account === 'object')
+        )).toBe(true);
       });
     });
   });

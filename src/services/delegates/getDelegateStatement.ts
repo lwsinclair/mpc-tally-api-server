@@ -35,6 +35,18 @@ const GET_DELEGATE_STATEMENT_QUERY = gql`
   }
 `;
 
+const GET_ADDRESS_HEADER_QUERY = gql`
+  query AddressHeader($accountId: AccountID!) {
+    account(id: $accountId) {
+      address
+      bio
+      name
+      picture
+      twitter
+    }
+  }
+`;
+
 // Use discriminated union for input type
 type GetDelegateStatementInput = {
   address: string;
@@ -43,10 +55,23 @@ type GetDelegateStatementInput = {
   | { organizationSlug: string; governorId?: never }
 );
 
+interface AccountHeader {
+  address: string;
+  bio?: string;
+  name?: string;
+  picture?: string;
+  twitter?: string;
+}
+
+interface DelegateStatementResponse {
+  statement: DelegateStatement | null;
+  account: AccountHeader | null;
+}
+
 export async function getDelegateStatement(
   client: GraphQLClient,
   input: GetDelegateStatementInput
-): Promise<DelegateStatement | null> {
+): Promise<DelegateStatementResponse | null> {
   // Input validation first
   if (!input.address) {
     throw new ValidationError('Address is required');
@@ -97,34 +122,55 @@ export async function getDelegateStatement(
         }
       }
 
-      // Wait for rate limit before delegate statement request
-      await globalRateLimiter.waitForRateLimit();
+      // Format the account ID for the header query
+      const accountId = `eip155:1:${input.address.toLowerCase()}`;
 
-      const variables = {
-        input: {
-          address: input.address,
-          governorId,
-          ...(organizationId && { organizationId })
-        }
-      };
+      // Make both requests in parallel
+      const [statementResponse, accountResponse] = await Promise.all([
+        // Get delegate statement
+        (async () => {
+          await globalRateLimiter.waitForRateLimit();
+          const variables = {
+            input: {
+              address: input.address,
+              governorId,
+              ...(organizationId && { organizationId })
+            }
+          };
+          return client.request<{
+            delegate?: {
+              statement: DelegateStatement | null;
+            };
+          }>(GET_DELEGATE_STATEMENT_QUERY, variables);
+        })(),
 
-      const response = await client.request<{
-        delegate?: {
-          statement: DelegateStatement | null;
-        };
-      }>(GET_DELEGATE_STATEMENT_QUERY, variables);
+        // Get account header
+        (async () => {
+          await globalRateLimiter.waitForRateLimit();
+          return client.request<{
+            account: AccountHeader | null;
+          }>(GET_ADDRESS_HEADER_QUERY, { accountId });
+        })()
+      ]);
 
       // Update rate limiter with response headers if available
-      if ('headers' in response) {
-        globalRateLimiter.updateFromHeaders(response.headers as Record<string, string>);
+      if ('headers' in statementResponse) {
+        globalRateLimiter.updateFromHeaders(statementResponse.headers as Record<string, string>);
+      }
+      if ('headers' in accountResponse) {
+        globalRateLimiter.updateFromHeaders(accountResponse.headers as Record<string, string>);
       }
 
-      if (!response.delegate?.statement) {
+      // If we don't have a statement, return null
+      if (!statementResponse.delegate?.statement) {
         return null;
       }
 
-      // Return the statement without strict validation
-      return response.delegate.statement;
+      // Return combined response
+      return {
+        statement: statementResponse.delegate.statement,
+        account: accountResponse.account
+      };
 
     } catch (error) {
       if (error instanceof GraphQLError) {
