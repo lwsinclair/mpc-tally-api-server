@@ -1,42 +1,60 @@
 import { GraphQLClient } from 'graphql-request';
-import { GET_ADDRESS_GOVERNANCES_QUERY } from './addresses.queries.js';
-import { AddressGovernancesInput, AddressGovernancesResponse } from './addresses.types.js';
+import { gql } from 'graphql-request';
+import { AddressGovernancesInput } from './addresses.types.js';
+
+const GET_ADDRESS_GOVERNANCES_QUERY = gql`
+  query AddressGovernancesDelegatees($input: DelegationsInput!) {
+    delegatees(input: $input) {
+      nodes {
+        ... on Delegation {
+          chainId
+          organization {
+            id
+            name
+            slug
+            metadata {
+              icon
+            }
+            delegatesVotesCount
+          }
+          token {
+            id
+            name
+            symbol
+            decimals
+            supply
+          }
+          votes
+        }
+      }
+    }
+  }
+`;
 
 export async function getAddressGovernances(
   client: GraphQLClient,
   input: AddressGovernancesInput
-): Promise<AddressGovernancesResponse> {
+): Promise<Record<string, any>> {
   if (!input.address) {
     throw new Error('Address is required');
   }
 
   try {
-    const accountId = `eip155:1:${input.address.toLowerCase()}`;
-    const response = await client.request<AddressGovernancesResponse>(
+    const response = await client.request(
       GET_ADDRESS_GOVERNANCES_QUERY,
       {
-        accountId
-      }
-    );
-
-    // Return empty array if no delegated governors found
-    if (!response?.account?.delegatedGovernors) {
-      return {
-        account: {
-          delegatedGovernors: []
+        input: {
+          filters: {
+            address: input.address.toLowerCase()
+          }
         }
-      };
-    }
+      }
+    ) as Record<string, any>;
 
     return response;
-  } catch (error) {
-    // If we get a 422 error, it means no governances found
+  } catch (error: any) {
     if (error.response?.status === 422) {
-      return {
-        account: {
-          delegatedGovernors: []
-        }
-      };
+      return { delegatees: { nodes: [] } };
     }
     throw new Error(`Failed to fetch address governances: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
