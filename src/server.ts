@@ -302,10 +302,22 @@ export class TallyServer {
               organizationSlug: {
                 type: "string",
                 description: "The organization slug to get proposals from"
+              },
+              limit: {
+                type: "number",
+                description: "Maximum number of proposals to return (default: 20)"
+              },
+              afterCursor: {
+                type: "string",
+                description: "Cursor for pagination"
+              },
+              beforeCursor: {
+                type: "string",
+                description: "Cursor for previous page pagination"
               }
             }
           },
-          handler: async function (input: any) {
+          handler: async function (this: { service: TallyService }, input: Record<string, unknown>) {
             const { address, organizationSlug } = input;
             if (typeof address !== 'string') {
               throw new Error('address must be a string');
@@ -313,9 +325,12 @@ export class TallyServer {
             if (typeof organizationSlug !== 'string') {
               throw new Error('organizationSlug must be a string');
             }
-            const result = await this.service.getAddressCreatedProposals({
+            const result = await (this.service as any).getAddressCreatedProposals({
               address,
-              organizationSlug
+              organizationSlug,
+              limit: typeof input.limit === 'number' ? input.limit : undefined,
+              afterCursor: typeof input.afterCursor === 'string' ? input.afterCursor : undefined,
+              beforeCursor: typeof input.beforeCursor === 'string' ? input.beforeCursor : undefined
             });
             return JSON.stringify(result);
           }
@@ -712,7 +727,7 @@ export class TallyServer {
             throw new Error("organizationSlug must be a string");
           }
 
-          const result = await this.service.getAddressCreatedProposals({
+          const result = await (this.service as any).getAddressCreatedProposals({
             address: args.address,
             organizationSlug: args.organizationSlug,
             limit: typeof args.limit === "number" ? args.limit : undefined,
@@ -749,18 +764,18 @@ export class TallyServer {
           const result = await this.service.getAddressDAOProposals({
             address: args.address,
             organizationSlug: args.organizationSlug,
-            limit: args.limit,
-            afterCursor: args.afterCursor,
+            limit: typeof args.limit === "number" ? args.limit : undefined,
+            afterCursor: typeof args.afterCursor === "string" ? args.afterCursor : undefined,
           });
 
           const proposals = result.proposals.nodes;
-          const content = proposals.map((proposal) => ({
+          const content = proposals.map((proposal: any) => ({
             id: proposal.id,
             onchainId: proposal.onchainId,
-            governorId: proposal.governor.id,
-            organizationId: proposal.governor.organization.id,
-            organizationName: proposal.governor.organization.name,
-            organizationSlug: proposal.governor.organization.slug,
+            governorId: proposal.governor?.id,
+            organizationId: proposal.governor?.organization?.id,
+            organizationName: proposal.governor?.organization?.name,
+            organizationSlug: proposal.governor?.organization?.slug,
             description: proposal.metadata?.description,
             status: proposal.status,
             createdAt: proposal.createdAt,
@@ -773,7 +788,7 @@ export class TallyServer {
           }));
 
           return {
-            content,
+            content: [{ type: "text", text: JSON.stringify(content) }],
             pageInfo: result.proposals.pageInfo,
           };
         } catch (error) {
@@ -831,43 +846,6 @@ export class TallyServer {
         } catch (error) {
           throw new Error(
             `Error fetching address votes: ${
-              error instanceof Error ? error.message : "Unknown error"
-            }`
-          );
-        }
-      }
-
-      if (name === "get-address-created-proposals") {
-        try {
-          if (typeof args.address !== "string") {
-            throw new Error("address must be a string");
-          }
-
-          const result = await this.service.getAddressCreatedProposals({
-            address: args.address,
-            limit: args.limit,
-            afterCursor: args.afterCursor,
-          });
-
-          const proposals = result.proposals.nodes;
-          const content = proposals.map((proposal) => ({
-            id: proposal.id,
-            onchainId: proposal.onchainId,
-            governorId: proposal.governor.id,
-            description: proposal.metadata?.description,
-            status: proposal.status,
-            createdAt: proposal.createdAt,
-            blockTimestamp: proposal.block?.timestamp,
-            voteStats: proposal.voteStats,
-          }));
-
-          return {
-            content,
-            pageInfo: result.proposals.pageInfo,
-          };
-        } catch (error) {
-          throw new Error(
-            `Error fetching address created proposals: ${
               error instanceof Error ? error.message : "Unknown error"
             }`
           );

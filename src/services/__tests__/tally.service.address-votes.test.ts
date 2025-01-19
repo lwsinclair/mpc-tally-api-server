@@ -8,7 +8,6 @@ let tallyService: TallyService;
 
 describe('TallyService - Address Votes', () => {
   beforeAll(async () => {
-    console.log('Waiting 30 seconds before starting tests...');
     await new Promise(resolve => setTimeout(resolve, 30000));
     
     const apiKey = process.env.TALLY_API_KEY;
@@ -20,7 +19,6 @@ describe('TallyService - Address Votes', () => {
   });
 
   test('should fetch votes for an address', async () => {
-    console.log('Starting basic votes fetch test...');
     const address = '0xb49f8b8613be240213c1827e2e576044ffec7948';
     const organizationSlug = 'uniswap';
 
@@ -36,7 +34,6 @@ describe('TallyService - Address Votes', () => {
   });
 
   test('should handle pagination correctly', async () => {
-    console.log('Starting pagination test...');
     const address = '0xb49f8b8613be240213c1827e2e576044ffec7948';
     const organizationSlug = 'uniswap';
 

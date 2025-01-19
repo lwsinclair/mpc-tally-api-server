@@ -85,11 +85,6 @@ export interface Proposal {
   voteStats: VoteStat[];
   governor: ProposalGovernor;
   proposer: ProposalProposer;
-  block?: {
-    timestamp: string;
-    number: string;
-  };
-  originalId?: string;
 }
 
 export interface ProposalsResponse {

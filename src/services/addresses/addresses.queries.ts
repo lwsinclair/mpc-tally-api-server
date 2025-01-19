@@ -223,40 +223,24 @@ export const GET_ADDRESS_GOVERNANCES_QUERY = gql`
 `;
 
 export const GET_ADDRESS_RECEIVED_DELEGATIONS_QUERY = gql`
-  query GetAddressReceivedDelegations($accountId: AccountID!, $governorId: ID!, $pagination: PaginationInput, $sort: DelegationSort) {
-    account(id: $accountId) {
-      delegationsReceived(governorId: $governorId, pagination: $pagination, sort: $sort) {
-        nodes {
-          id
-          blockNumber
-          blockTimestamp
-          votes
-          delegator {
-            id
-            address
-          }
-          delegate {
-            id
-            address
-          }
-          token {
-            id
-            symbol
-            decimals
-          }
-          governor {
-            id
-            name
-            type
-          }
+  query ReceivedDelegationsGovernance($input: DelegationsInput!) {
+    delegators(input: $input) {
+      nodes {
+        chainId
+        delegator {
+          address
+          ens
+          name
+          picture
+          twitter
         }
-        pageInfo {
-          hasNextPage
-          hasPreviousPage
-          startCursor
-          endCursor
-        }
-        totalCount
+        blockNumber
+        blockTimestamp
+        votes
+      }
+      pageInfo {
+        firstCursor
+        lastCursor
       }
     }
   }

@@ -18,22 +18,23 @@ export interface ListDelegatesInput {
 // Response Types
 export interface Delegate {
   id: string;
-  address: string;
-  name?: string;
-  statement?: DelegateStatement;
-  isSeekingDelegation: boolean;
-  governor: {
-    id: string;
-    name: string;
-    organization: {
-      id: string;
-      name: string;
-      slug: string;
-    };
+  account: {
+    address: string;
+    bio?: string;
+    name?: string;
+    picture?: string | null;
+    twitter?: string;
+    ens?: string;
+    otherLinks?: string[];
+    email?: string;
   };
-  votes: string;
-  votesCount: number;
+  votesCount: string;
   delegatorsCount: number;
+  statement?: {
+    statementSummary?: string;
+    discourseUsername?: string;
+    discourseProfileLink?: string;
+  };
 }
 
 export interface DelegatesResponse {
@@ -62,19 +63,21 @@ export interface DelegateStatement {
   id: string;
   address: string;
   statement: string;
+  statementSummary: string;
+  isSeekingDelegation: boolean;
+  issues: Array<{
+    id: string;
+    name: string;
+  }>;
   governor?: {
     id: string;
     name: string;
-  };
-  organization?: {
-    id: string;
-    name: string;
-    slug: string;
+    type: string;
   };
 }
 
 export interface GetDelegateStatementInput {
   address: string;
-  governorId?: string;
   organizationSlug?: string;
+  governorId?: string;
 } 

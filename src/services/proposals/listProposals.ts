@@ -1,7 +1,7 @@
 import { GraphQLClient } from 'graphql-request';
 import { LIST_PROPOSALS_QUERY } from './proposals.queries.js';
 import { getDAO } from '../organizations/getDAO.js';
-import type { ProposalsInput, ProposalsResponse, ListProposalsResponse } from './listProposals.types.js';
+import type { ProposalsInput, ProposalsResponse } from './listProposals.types.js';
 import { inspect } from 'util';
 
 // Helper function to get object structure
@@ -23,7 +23,7 @@ function getObjectStructure(obj: any): any {
 export async function listProposals(
   client: GraphQLClient,
   input: ProposalsInput & { organizationSlug?: string }
-): Promise<ListProposalsResponse> {
+): Promise<ProposalsResponse> {
   try {
     let apiInput: ProposalsInput = { ...input };
     delete (apiInput as any).organizationSlug;  // Remove organizationSlug before API call
@@ -40,12 +40,10 @@ export async function listProposals(
       };
     }
 
-    console.log('Input structure:', inspect(getObjectStructure(apiInput), { colors: true }));
-    const response = await client.request<ListProposalsResponse>(LIST_PROPOSALS_QUERY, { input: apiInput });
+    const response = await client.request<ProposalsResponse>(LIST_PROPOSALS_QUERY, { input: apiInput });
     
-    console.log('Response structure:', inspect(getObjectStructure(response), { colors: true }));
 
-    if (!response?.data?.proposals?.nodes) {
+    if (!response?.proposals?.nodes) {
       console.error('Invalid response structure:', inspect(getObjectStructure(response), { colors: true }));
       throw new Error('Invalid response structure from API');
     }

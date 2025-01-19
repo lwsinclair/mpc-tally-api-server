@@ -5,6 +5,7 @@ export interface AddressProposalsInput {
   address: string;
   limit?: number;
   afterCursor?: string;
+  beforeCursor?: string;
 }
 
 export interface AddressProposalsResponse {
@@ -47,29 +48,31 @@ export interface Block {
 export interface Account {
   id: string;
   address: string;
+  name?: string;
+  picture?: string;
+  twitter?: string;
 }
 
 export interface Vote {
   id: string;
-  type: string;
-  amount: string;
-  voter: Account;
+  amount: string;  // Uint256 represented as string
+  block: Block;
+  chainId: string; // ChainID represented as string
+  isBridged?: boolean;
   proposal: {
     id: string;
   };
-  block: {
-    timestamp: string;
-    number: string;
-  };
-  chainId: string;
-  txHash: string;
+  reason?: string;
+  type: VoteType;  // Using our existing VoteType enum
+  txHash: string;  // Hash represented as string
+  voter: Account;
 }
 
 export interface VotesResponse {
   nodes: Vote[];
   pageInfo: {
-    firstCursor: string | null;
-    lastCursor: string | null;
+    firstCursor: string;
+    lastCursor: string;
     count: number;
   };
 }
@@ -82,13 +85,19 @@ export interface AddressVotesInput {
 }
 
 export interface AddressVotesResponse {
-  votes: VotesResponse;
+  votes: {
+    nodes: Vote[];
+    pageInfo: {
+      firstCursor: string;
+      lastCursor: string;
+      count: number;
+    };
+  };
 }
 
 export interface AddressCreatedProposalsInput {
   address: string;
-  limit?: number;
-  afterCursor?: string;
+  organizationSlug: string;
 }
 
 export interface AddressCreatedProposalsResponse {
@@ -169,6 +178,7 @@ export interface AddressGovernance {
   id: string;
   name: string;
   type: string;
+  chainId: string;
   organization: {
     id: string;
     name: string;
@@ -198,24 +208,13 @@ export interface AddressGovernancesResponse {
 
 export interface GetAddressReceivedDelegationsInput {
   address: string;
-  organizationSlug?: string;
-  governorId?: string;
+  organizationSlug: string;
   limit?: number;
-  sortBy?: "votes";
+  sortBy?: 'votes';
   isDescending?: boolean;
 }
 
-export interface DelegationNode {
-  id: string;
-  votes: string;
-  delegator: {
-    id: string;
-    address: string;
-  };
-}
-
-export interface GetAddressReceivedDelegationsOutput {
-  nodes: DelegationNode[];
-  pageInfo: PageInfo;
-  totalCount: number;
+export interface GetAddressCreatedProposalsInput {
+  address: string;
+  organizationSlug: string;
 } 

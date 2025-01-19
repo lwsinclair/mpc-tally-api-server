@@ -60,10 +60,6 @@ const GET_ADDRESS_RECEIVED_DELEGATIONS_QUERY = gql`
 `;
 
 function parseRateLimitHeaders(headers: Record<string, string>) {
-  if (IS_TEST) {
-    console.log('Response headers:', headers);
-  }
-  
   // Parse rate limit headers if they exist
   if (headers['x-ratelimit-remaining']) {
     remainingRequests = parseInt(headers['x-ratelimit-remaining'], 10);
@@ -72,33 +68,17 @@ function parseRateLimitHeaders(headers: Record<string, string>) {
     rateLimitResetTime = parseInt(headers['x-ratelimit-reset'], 10) * 1000; // Convert to milliseconds
   }
   
-  if (IS_TEST && (remainingRequests !== null || rateLimitResetTime !== null)) {
-    console.log('Rate limit info:', { remainingRequests, rateLimitResetTime });
-  }
 }
 
 async function waitForRateLimit(): Promise<void> {
   const now = Date.now();
   const timeSinceLastRequest = now - lastRequestTime;
   
-  if (IS_TEST) {
-    console.log('Rate limit check:', {
-      now,
-      lastRequestTime,
-      timeSinceLastRequest,
-      remainingRequests,
-      rateLimitResetTime,
-      needsDelay: timeSinceLastRequest < BASE_DELAY
-    });
-  }
   
   // If we have rate limit info and no remaining requests, wait until reset
   if (remainingRequests === 0 && rateLimitResetTime) {
     const waitTime = Math.max(0, rateLimitResetTime - now);
     if (waitTime > 0) {
-      if (IS_TEST) {
-        console.log(`Rate limit exceeded, waiting ${waitTime}ms for reset`);
-      }
       await new Promise(resolve => setTimeout(resolve, waitTime));
       remainingRequests = null;
       rateLimitResetTime = null;
@@ -109,23 +89,14 @@ async function waitForRateLimit(): Promise<void> {
   // Always wait at least BASE_DELAY between requests
   if (timeSinceLastRequest < BASE_DELAY) {
     const waitTime = BASE_DELAY - timeSinceLastRequest;
-    if (IS_TEST) {
-      console.log(`Waiting ${waitTime}ms before next request`);
-    }
     await new Promise(resolve => setTimeout(resolve, waitTime));
   }
   
   lastRequestTime = Date.now();
-  if (IS_TEST) {
-    console.log('Updated lastRequestTime:', lastRequestTime);
-  }
 }
 
 async function exponentialBackoff(retryCount: number): Promise<void> {
   const delay = Math.min(BASE_DELAY * Math.pow(2, retryCount), MAX_DELAY);
-  if (IS_TEST) {
-    console.log(`Exponential backoff: Waiting ${delay}ms on retry ${retryCount}`);
-  }
   await new Promise(resolve => setTimeout(resolve, delay));
 }
 
@@ -142,9 +113,6 @@ export async function getAddressReceivedDelegations(
         throw new Error('organizationSlug is required');
       }
 
-      if (IS_TEST) {
-        console.log('Making getDAO request...');
-      }
       // Wait for rate limit before getDAO request
       await waitForRateLimit();
       const dao = await getDAO(client, input.organizationSlug);
@@ -152,9 +120,6 @@ export async function getAddressReceivedDelegations(
         throw new Error('Organization not found');
       }
 
-      if (IS_TEST) {
-        console.log('Making delegations request...');
-      }
       // Wait for rate limit before delegations request
       await waitForRateLimit();
 
@@ -201,9 +166,6 @@ export async function getAddressReceivedDelegations(
         if (errorResponse?.status === 429) {
           retries++;
           if (retries < MAX_RETRIES) {
-            if (IS_TEST) {
-              console.log(`Rate limited (429), attempt ${retries}/${MAX_RETRIES}`);
-            }
             await exponentialBackoff(retries);
             continue;
           }
