@@ -1,31 +1,42 @@
 import { GraphQLClient } from 'graphql-request';
 import { GET_ADDRESS_CREATED_PROPOSALS_QUERY } from './addresses.queries.js';
-import { AddressCreatedProposalsInput, AddressCreatedProposalsResponse } from './addresses.types.js';
+import { getDAO } from '../organizations/getDAO.js';
 
 export async function getAddressCreatedProposals(
   client: GraphQLClient,
-  input: AddressCreatedProposalsInput
-): Promise<AddressCreatedProposalsResponse> {
+  input: { address: string; organizationSlug: string }
+): Promise<Record<string, any>> {
+  if (!input.address) {
+    throw new Error('Address is required');
+  }
+
+  if (!input.organizationSlug) {
+    throw new Error('Organization slug is required');
+  }
+
   try {
-    if (!input.address) {
-      throw new Error('address is required to fetch created proposals');
+    const dao = await getDAO(client, input.organizationSlug);
+    if (!dao?.governorIds?.[0]) {
+      throw new Error('No governor found for organization');
     }
 
-    const response = await client.request<AddressCreatedProposalsResponse>(GET_ADDRESS_CREATED_PROPOSALS_QUERY, {
+    const response = await client.request(GET_ADDRESS_CREATED_PROPOSALS_QUERY, {
       input: {
         filters: {
-          proposer: input.address
+          proposer: input.address,
+          governorId: dao.governorIds[0]
         },
-        pagination: {
-          limit: Math.min(input.limit || 20, 50),
-          afterCursor: input.afterCursor,
-          beforeCursor: input.beforeCursor
+        page: {
+          limit: 20
         }
       }
     });
 
     return response;
   } catch (error) {
-    throw new Error(`Failed to fetch created proposals: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to fetch proposals');
   }
 } 
