@@ -1,5 +1,5 @@
 import { GraphQLClient } from 'graphql-request';
-import { DelegationNode, GetAddressReceivedDelegationsInput, GetAddressReceivedDelegationsOutput, PageInfo } from '../../types.js';
+import { GetAddressReceivedDelegationsInput } from './addresses.types.js';
 import { GraphQLError } from 'graphql';
 import { getDAO } from '../organizations/getDAO.js';
 import { gql } from 'graphql-request';
@@ -26,15 +26,28 @@ let remainingRequests: number | null = null;
 let rateLimitResetTime: number | null = null;
 
 const GET_ADDRESS_RECEIVED_DELEGATIONS_QUERY = gql`
-  query GetDelegations($input: DelegationsInput!) {
-    delegatees(input: $input) {
+  query ReceivedDelegationsGovernance($input: DelegationsInput!) {
+    delegators(input: $input) {
       nodes {
         ... on Delegation {
           id
+          chainId
+          blockNumber
+          blockTimestamp
           votes
           delegator {
-            id
             address
+            name
+            picture
+            twitter
+            ens
+          }
+          token {
+            id
+            type
+            name
+            symbol
+            decimals
           }
         }
       }
@@ -119,29 +132,24 @@ async function exponentialBackoff(retryCount: number): Promise<void> {
 export async function getAddressReceivedDelegations(
   client: GraphQLClient,
   input: GetAddressReceivedDelegationsInput
-): Promise<GetAddressReceivedDelegationsOutput> {
+): Promise<any> {
   let retries = 0;
   let lastError: Error | null = null;
 
   while (retries < MAX_RETRIES) {
     try {
-      let governorId: string | undefined;
+      if (!input.organizationSlug) {
+        throw new Error('organizationSlug is required');
+      }
 
-      if (input.governorId) {
-        governorId = input.governorId;
-      } else if (input.organizationSlug) {
-        if (IS_TEST) {
-          console.log('Making getDAO request...');
-        }
-        // Wait for rate limit before getDAO request
-        await waitForRateLimit();
-        const dao = await getDAO(client, input.organizationSlug);
-        if (!dao.governorIds?.length) {
-          throw new Error('Organization or governor not found');
-        }
-        governorId = dao.governorIds[0];
-      } else {
-        throw new Error('Either governorId or organizationSlug is required');
+      if (IS_TEST) {
+        console.log('Making getDAO request...');
+      }
+      // Wait for rate limit before getDAO request
+      await waitForRateLimit();
+      const dao = await getDAO(client, input.organizationSlug);
+      if (!dao.id) {
+        throw new Error('Organization not found');
       }
 
       if (IS_TEST) {
@@ -154,80 +162,43 @@ export async function getAddressReceivedDelegations(
         input: {
           filters: {
             address: input.address,
-            governorId
+            organizationId: dao.id
           },
           page: input.limit ? { limit: input.limit } : undefined,
           sort: input.sortBy ? {
-            field: input.sortBy,
-            direction: input.isDescending ? 'DESC' : 'ASC'
+            sortBy: input.sortBy,
+            isDescending: input.isDescending ?? true
           } : undefined
         }
       };
 
-      const response = await client.request<{
-        delegatees: {
-          nodes: Array<{
-            id: string;
-            votes: string;
-            delegator: {
-              id: string;
-              address: string;
-            };
-          }>;
-          pageInfo: {
-            firstCursor: string;
-            lastCursor: string;
-          };
-        };
-      }>(GET_ADDRESS_RECEIVED_DELEGATIONS_QUERY, variables);
+      const response = await client.request<Record<string, any>>(GET_ADDRESS_RECEIVED_DELEGATIONS_QUERY, variables);
 
       // Parse rate limit headers from successful response
-      if (response.headers) {
-        parseRateLimitHeaders(response.headers);
+      if ('headers' in response) {
+        parseRateLimitHeaders(response.headers as Record<string, string>);
       }
 
-      if (!response.delegatees) {
-        return {
-          nodes: [],
-          pageInfo: {
-            hasNextPage: false,
-            hasPreviousPage: false,
-            startCursor: null,
-            endCursor: null,
-          },
-          totalCount: 0,
-        };
-      }
+      // Return the raw response
+      return response;
 
-      return {
-        nodes: response.delegatees.nodes.map(node => ({
-          id: node.id,
-          votes: node.votes,
-          delegator: {
-            id: node.delegator.id,
-            address: node.delegator.address,
-          },
-        })),
-        pageInfo: {
-          hasNextPage: !!response.delegatees.pageInfo.lastCursor,
-          hasPreviousPage: !!response.delegatees.pageInfo.firstCursor,
-          startCursor: response.delegatees.pageInfo.firstCursor || null,
-          endCursor: response.delegatees.pageInfo.lastCursor || null,
-        },
-        totalCount: response.delegatees.nodes.length,
-      };
     } catch (error) {
-      lastError = error;
+      if (error instanceof Error) {
+        lastError = error;
+      } else {
+        lastError = new Error(String(error));
+      }
+
       if (error instanceof GraphQLError) {
-        const graphqlError = error as GraphQLError;
+        const errorResponse = (error as any).response;
         
         // Parse rate limit headers from error response
-        if (graphqlError.response?.headers) {
-          parseRateLimitHeaders(graphqlError.response.headers);
+        if (errorResponse?.headers) {
+          parseRateLimitHeaders(errorResponse.headers);
         }
         
         // Handle rate limiting (429)
-        if (graphqlError.response.status === 429) {
+        if (errorResponse?.status === 429) {
           retries++;
           if (retries < MAX_RETRIES) {
             if (IS_TEST) {
@@ -240,25 +211,16 @@ export async function getAddressReceivedDelegations(
         }
 
         // Handle other GraphQL errors
-        if (graphqlError.response.errors) {
-          lastError = graphqlError.response.errors[0];
-          if (lastError.message.includes('not found')) {
-            return {
-              nodes: [],
-              pageInfo: {
-                hasNextPage: false,
-                hasPreviousPage: false,
-                startCursor: null,
-                endCursor: null,
-              },
-              totalCount: 0,
-            };
+        if (errorResponse?.errors) {
+          const graphqlError = errorResponse.errors[0];
+          if (graphqlError?.message?.includes('not found')) {
+            return { delegators: { nodes: [], pageInfo: {} } };
           }
         }
       }
       
       // If we've reached here, it's an unexpected error
-      throw new Error(`Failed to fetch received delegations: ${lastError?.message}`);
+      throw new Error(`Failed to fetch received delegations: ${lastError.message}`);
     }
   }
 
