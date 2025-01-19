@@ -5,33 +5,9 @@ import {
   CallToolRequestSchema,
   type Tool,
   type TextContent,
-  type CallToolRequest,
 } from "@modelcontextprotocol/sdk/types.js";
 import { TallyService } from "./services/tally.service.js";
 import type { OrganizationsSortBy } from "./services/organizations/organizations.types.js";
-import type { 
-  AddressVotesInput,
-  AddressProposalsInput,
-  AddressDAOProposalsInput,
-  AddressCreatedProposalsInput,
-  AddressGovernancesInput,
-  AddressMetadataInput,
-} from './services/addresses/addresses.types.js';
-import type {
-  ProposalsInput,
-  ProposalInput,
-} from './services/proposals/index.js';
-import type {
-  GetDelegateStatementInput,
-} from './services/delegates/delegates.types.js';
-import type {
-  GetDelegatorsParams,
-} from './services/delegators/delegators.types.js';
-
-interface RequestParams {
-  name: string;
-  input: Record<string, unknown>;
-}
 
 export class TallyServer {
   private server: Server;
@@ -287,22 +263,23 @@ export class TallyServer {
         },
         {
           name: "get-address-votes",
-          description: "Get votes cast by a specific address for a given organization",
+          description:
+            "Get votes cast by an address for a specific organization",
           inputSchema: {
             type: "object",
             required: ["address", "organizationSlug"],
             properties: {
               address: {
                 type: "string",
-                description: "The Ethereum address to get votes for (0x format)",
+                description: "The address to get votes for",
               },
               organizationSlug: {
                 type: "string",
-                description: "The organization's slug (e.g., 'uniswap')",
+                description: "The organization slug to get votes from",
               },
               limit: {
                 type: "number",
-                description: "Maximum number of votes to return (default: 20, max: 50)",
+                description: "Maximum number of votes to return (default: 20)",
               },
               afterCursor: {
                 type: "string",
@@ -454,444 +431,570 @@ export class TallyServer {
     });
 
     // Handle tool execution
-    this.server.setRequestHandler(CallToolRequestSchema, async (request: CallToolRequest) => {
+    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const { name, arguments: args = {} } = request.params;
-      
-      switch (name) {
-        case "list-daos": {
-          try {
-            const data = await this.service.listDAOs({
-              limit: typeof args.limit === "number" ? args.limit : undefined,
-              afterCursor:
-                typeof args.afterCursor === "string"
-                  ? args.afterCursor
-                  : undefined,
-              sortBy:
-                typeof args.sortBy === "string"
-                  ? (args.sortBy as OrganizationsSortBy)
-                  : undefined,
-            });
 
-            const content: TextContent[] = [
-              {
-                type: "text",
-                text: TallyService.formatDAOList(data.organizations.nodes),
-              },
-            ];
-
-            return { content };
-          } catch (error) {
-            throw new Error(
-              `Error fetching DAOs: ${
-                error instanceof Error ? error.message : "Unknown error"
-              }`
-            );
-          }
-        }
-        case "get-dao": {
-          try {
-            if (typeof args.slug !== "string") {
-              throw new Error("slug must be a string");
-            }
-
-            const data = await this.service.getDAO(args.slug);
-            const content: TextContent[] = [
-              {
-                type: "text",
-                text: TallyService.formatDAO(data),
-              },
-            ];
-
-            return { content };
-          } catch (error) {
-            throw new Error(
-              `Error fetching DAO: ${
-                error instanceof Error ? error.message : "Unknown error"
-              }`
-            );
-          }
-        }
-        case "list-delegates": {
-          try {
-            if (typeof args.organizationIdOrSlug !== "string") {
-              throw new Error("organizationIdOrSlug must be a string");
-            }
-
-            const data = await this.service.listDelegates({
-              organizationId: args.organizationIdOrSlug.match(/^\d+$/)
-                ? args.organizationIdOrSlug
+      if (name === "list-daos") {
+        try {
+          const data = await this.service.listDAOs({
+            limit: typeof args.limit === "number" ? args.limit : undefined,
+            afterCursor:
+              typeof args.afterCursor === "string"
+                ? args.afterCursor
                 : undefined,
-              organizationSlug:
-                !args.organizationIdOrSlug.match(/^\d+$/) &&
-                !args.organizationIdOrSlug.startsWith("eip155:")
-                  ? args.organizationIdOrSlug
-                  : undefined,
-              governorId: args.organizationIdOrSlug.startsWith("eip155:")
-                ? args.organizationIdOrSlug
+            sortBy:
+              typeof args.sortBy === "string"
+                ? (args.sortBy as OrganizationsSortBy)
                 : undefined,
-              limit: typeof args.limit === "number" ? args.limit : undefined,
-              hasVotes:
-                typeof args.hasVotes === "boolean" ? args.hasVotes : undefined,
-              hasDelegators:
-                typeof args.hasDelegators === "boolean"
-                  ? args.hasDelegators
-                  : undefined,
-              isSeekingDelegation:
-                typeof args.isSeekingDelegation === "boolean"
-                  ? args.isSeekingDelegation
-                  : undefined,
-            });
+          });
 
-            const content: TextContent[] = [
-              {
-                type: "text",
-                text: TallyService.formatDelegatesList(data.delegates),
-              },
-            ];
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text: TallyService.formatDAOList(data.organizations.nodes),
+            },
+          ];
 
-            return { content };
-          } catch (error) {
-            throw new Error(
-              `Error fetching delegates: ${
-                error instanceof Error ? error.message : "Unknown error"
-              }`
-            );
-          }
+          return { content };
+        } catch (error) {
+          throw new Error(
+            `Error fetching DAOs: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
         }
-        case "get-delegators": {
-          try {
-            if (typeof args.address !== "string") {
-              throw new Error("address must be a string");
-            }
+      }
 
-            const data = await this.service.getDelegators({
-              address: args.address,
+      if (name === "get-dao") {
+        try {
+          if (typeof args.slug !== "string") {
+            throw new Error("slug must be a string");
+          }
+
+          const data = await this.service.getDAO(args.slug);
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text: TallyService.formatDAO(data),
+            },
+          ];
+
+          return { content };
+        } catch (error) {
+          throw new Error(
+            `Error fetching DAO: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+        }
+      }
+
+      if (name === "list-delegates") {
+        try {
+          if (typeof args.organizationIdOrSlug !== "string") {
+            throw new Error("organizationIdOrSlug must be a string");
+          }
+
+          const result = await this.service.listDelegates({
+            organizationSlug: args.organizationIdOrSlug,
+            limit: typeof args.limit === "number" ? args.limit : undefined,
+            hasVotes: typeof args.hasVotes === "boolean" ? args.hasVotes : undefined,
+            hasDelegators: typeof args.hasDelegators === "boolean" ? args.hasDelegators : undefined,
+            isSeekingDelegation: typeof args.isSeekingDelegation === "boolean" ? args.isSeekingDelegation : undefined,
+          });
+
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text: JSON.stringify(result),
+            },
+          ];
+
+          return { content };
+        } catch (error) {
+          throw new Error(
+            `Error fetching delegates: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+        }
+      }
+
+      if (name === "get-delegators") {
+        try {
+          if (typeof args.address !== "string") {
+            throw new Error("address must be a string");
+          }
+
+          const data = await this.service.getDelegators({
+            address: args.address,
+            organizationId:
+              typeof args.organizationId === "string"
+                ? args.organizationId
+                : undefined,
+            organizationSlug:
+              typeof args.organizationSlug === "string"
+                ? args.organizationSlug
+                : undefined,
+            governorId:
+              typeof args.governorId === "string" ? args.governorId : undefined,
+            limit: typeof args.limit === "number" ? args.limit : undefined,
+            afterCursor:
+              typeof args.afterCursor === "string"
+                ? args.afterCursor
+                : undefined,
+            beforeCursor:
+              typeof args.beforeCursor === "string"
+                ? args.beforeCursor
+                : undefined,
+            sortBy:
+              typeof args.sortBy === "string"
+                ? (args.sortBy as "id" | "votes")
+                : undefined,
+            isDescending:
+              typeof args.isDescending === "boolean"
+                ? args.isDescending
+                : undefined,
+          });
+
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text: TallyService.formatDelegatorsList(data.delegators),
+            },
+          ];
+
+          return { content };
+        } catch (error) {
+          throw new Error(
+            `Error fetching delegators: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+        }
+      }
+
+      if (name === "list-proposals") {
+        try {
+          const data = await this.service.listProposals({
+            filters: {
               organizationId:
                 typeof args.organizationId === "string"
-                  ? args.organizationId
-                  : undefined,
-              organizationSlug:
-                typeof args.organizationSlug === "string"
-                  ? args.organizationSlug
+                  ? args.organizationId.toString()
                   : undefined,
               governorId:
-                typeof args.governorId === "string" ? args.governorId : undefined,
+                typeof args.governorId === "string"
+                  ? args.governorId
+                  : undefined,
+              includeArchived:
+                typeof args.includeArchived === "boolean"
+                  ? args.includeArchived
+                  : undefined,
+              isDraft:
+                typeof args.isDraft === "boolean" ? args.isDraft : undefined,
+            },
+            organizationSlug:
+              typeof args.organizationSlug === "string"
+                ? args.organizationSlug
+                : undefined,
+            page: {
               limit: typeof args.limit === "number" ? args.limit : undefined,
               afterCursor:
                 typeof args.afterCursor === "string"
-                  ? args.afterCursor
+                  ? args.afterCursor.toString()
                   : undefined,
               beforeCursor:
                 typeof args.beforeCursor === "string"
-                  ? args.beforeCursor
+                  ? args.beforeCursor.toString()
                   : undefined,
-              sortBy:
-                typeof args.sortBy === "string"
-                  ? (args.sortBy as "id" | "votes")
-                  : undefined,
-              isDescending:
-                typeof args.isDescending === "boolean"
-                  ? args.isDescending
-                  : undefined,
-            });
-
-            const content: TextContent[] = [
-              {
-                type: "text",
-                text: TallyService.formatDelegatorsList(data.delegators),
-              },
-            ];
-
-            return { content };
-          } catch (error) {
-            throw new Error(
-              `Error fetching delegators: ${
-                error instanceof Error ? error.message : "Unknown error"
-              }`
-            );
-          }
-        }
-        case "list-proposals": {
-          const params = args as Partial<ProposalsInput>;
-          
-          const input: ProposalsInput = {
-            filters: {
-              organizationId: typeof params.filters?.organizationId === 'string' ? params.filters.organizationId : undefined,
-              governorId: typeof params.filters?.governorId === 'string' ? params.filters.governorId : undefined,
-              includeArchived: typeof params.filters?.includeArchived === 'boolean' ? params.filters.includeArchived : undefined,
-              isDraft: typeof params.filters?.isDraft === 'boolean' ? params.filters.isDraft : undefined,
             },
-            page: {
-              limit: typeof params.page?.limit === 'number' ? params.page.limit : undefined,
-              afterCursor: typeof params.page?.afterCursor === 'string' ? params.page.afterCursor : undefined,
-              beforeCursor: typeof params.page?.beforeCursor === 'string' ? params.page.beforeCursor : undefined,
+            sort:
+              typeof args.isDescending === "boolean"
+                ? {
+                    isDescending: args.isDescending,
+                    sortBy: "id",
+                  }
+                : undefined,
+          });
+
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text: TallyService.formatProposalsList(data.proposals.nodes),
             },
-            sort: params.sort,
-          };
+          ];
 
-          const response = await this.service.listProposals(input);
-
-          return {
-            content: {
-              type: "text" as const,
-              text: JSON.stringify(response, null, 2),
-            },
-          };
-        }
-        case "get-proposal": {
-          const params = args as Partial<ProposalInput>;
-          
-          if (params.id) {
-            const input: ProposalInput = {
-              id: params.id,
-              includeArchived: typeof params.includeArchived === 'boolean' ? params.includeArchived : undefined,
-              isLatest: typeof params.isLatest === 'boolean' ? params.isLatest : undefined,
-            };
-            const response = await this.service.getProposal(input);
-            return {
-              content: {
-                type: "text" as const,
-                text: JSON.stringify(response, null, 2),
-              },
-            };
-          }
-          
-          if (params.onchainId && params.governorId) {
-            const input: ProposalInput = {
-              onchainId: params.onchainId,
-              governorId: params.governorId,
-              includeArchived: typeof params.includeArchived === 'boolean' ? params.includeArchived : undefined,
-              isLatest: typeof params.isLatest === 'boolean' ? params.isLatest : undefined,
-            };
-            const response = await this.service.getProposal(input);
-            return {
-              content: {
-                type: "text" as const,
-                text: JSON.stringify(response, null, 2),
-              },
-            };
-          }
-          
-          throw new Error('Either id or both onchainId and governorId must be provided');
-        }
-        case "get-address-votes": {
-          const params = args as Partial<AddressVotesInput>;
-          
-          if (!params.address || !params.organizationSlug || 
-              typeof params.address !== 'string' || 
-              typeof params.organizationSlug !== 'string') {
-            throw new Error('Invalid input: address and organizationSlug must be strings');
-          }
-
-          const input: AddressVotesInput = {
-            address: params.address,
-            organizationSlug: params.organizationSlug,
-            limit: typeof params.limit === 'number' ? params.limit : undefined,
-            afterCursor: typeof params.afterCursor === 'string' ? params.afterCursor : undefined,
-          };
-
-          const response = await this.service.getAddressVotes(input);
-
-          return {
-            content: {
-              type: "text" as const,
-              text: JSON.stringify(response, null, 2),
-            },
-          };
-        }
-        case "get-address-proposals-created": {
-          const params = args as Partial<AddressProposalsInput>;
-          
-          if (!params.address || typeof params.address !== 'string') {
-            throw new Error('Invalid input: address must be a string');
-          }
-
-          const input: AddressProposalsInput = {
-            address: params.address,
-            limit: typeof params.limit === 'number' ? params.limit : undefined,
-            afterCursor: typeof params.afterCursor === 'string' ? params.afterCursor : undefined,
-          };
-
-          const response = await this.service.getAddressProposals(input);
-
-          return {
-            content: {
-              type: "text" as const,
-              text: JSON.stringify(response, null, 2),
-            },
-          };
-        }
-        case "get-address-daos-proposals": {
-          const params = args as Partial<AddressDAOProposalsInput>;
-          
-          if (!params.address || !params.organizationSlug || 
-              typeof params.address !== 'string' || 
-              typeof params.organizationSlug !== 'string') {
-            throw new Error('Invalid input: address and organizationSlug must be strings');
-          }
-
-          const input: AddressDAOProposalsInput = {
-            address: params.address,
-            organizationSlug: params.organizationSlug,
-            limit: typeof params.limit === 'number' ? params.limit : undefined,
-            afterCursor: typeof params.afterCursor === 'string' ? params.afterCursor : undefined,
-          };
-
-          const response = await this.service.getAddressDAOProposals(input);
-
-          return {
-            content: {
-              type: "text" as const,
-              text: JSON.stringify(response, null, 2),
-            },
-          };
-        }
-        case "get-address-created-proposals": {
-          try {
-            if (typeof args.address !== "string") {
-              throw new Error("address must be a string");
-            }
-
-            const result = await this.service.getAddressCreatedProposals({
-              address: args.address,
-              limit: args.limit,
-              afterCursor: args.afterCursor,
-            });
-
-            const proposals = result.proposals.nodes;
-            const content = proposals.map((proposal) => ({
-              id: proposal.id,
-              onchainId: proposal.onchainId,
-              governorId: proposal.governor.id,
-              description: proposal.metadata?.description,
-              status: proposal.status,
-              createdAt: proposal.createdAt,
-              blockTimestamp: proposal.block?.timestamp,
-              voteStats: proposal.voteStats,
-            }));
-
-            return {
-              content,
-              pageInfo: result.proposals.pageInfo,
-            };
-          } catch (error) {
-            throw new Error(
-              `Error fetching address proposals: ${
-                error instanceof Error ? error.message : "Unknown error"
-              }`
-            );
-          }
-        }
-        case "get-address-received-delegations": {
-          try {
-            if (typeof args.address !== "string") {
-              throw new Error("address must be a string");
-            }
-
-            const result = await this.service.getAddressReceivedDelegations({
-              address: args.address,
-              organizationSlug:
-                typeof args.organizationSlug === "string"
-                  ? args.organizationSlug
-                  : undefined,
-              governorId:
-                typeof args.governorId === "string" ? args.governorId : undefined,
-              limit: typeof args.limit === "number" ? args.limit : undefined,
-              sortBy:
-                typeof args.sortBy === "string"
-                  ? (args.sortBy as "votes")
-                  : undefined,
-              isDescending:
-                typeof args.isDescending === "boolean"
-                  ? args.isDescending
-                  : undefined,
-            });
-
-            const content: TextContent[] = [
-              {
-                type: "text",
-                text:
-                  `Received delegations for ${args.address}:\n\n` +
-                  result.nodes
-                    .map(
-                      (node) =>
-                        `- From: ${node.delegator.address}${
-                          node.delegator.name ? ` (${node.delegator.name})` : ""
-                        }\n` +
-                        `  Votes: ${node.votes}\n` +
-                        `  Block: ${node.blockNumber}`
-                    )
-                    .join("\n\n"),
-              },
-            ];
-
-            return { content };
-          } catch (error) {
-            throw new Error(
-              `Error fetching received delegations: ${
-                error instanceof Error ? error.message : "Unknown error"
-              }`
-            );
-          }
-        }
-        case "get-delegate-statement": {
-          const params = args as Partial<GetDelegateStatementInput>;
-          
-          if (!params.address || typeof params.address !== 'string') {
-            throw new Error('Invalid input: address must be a string');
-          }
-
-          const input: GetDelegateStatementInput = {
-            address: params.address,
-            governorId: typeof params.governorId === 'string' ? params.governorId : undefined,
-            organizationSlug: typeof params.organizationSlug === 'string' ? params.organizationSlug : undefined,
-          };
-
-          const response = await this.service.getDelegateStatement(input);
-
-          return {
-            content: {
-              type: "text" as const,
-              text: response ? JSON.stringify(response, null, 2) : 'No delegate statement found',
-            },
-          };
-        }
-        case "get-address-governances": {
-          try {
-            if (typeof args.address !== "string") {
-              throw new Error("address must be a string");
-            }
-
-            const result = await this.service.getAddressGovernances({
-              address: args.address,
-            });
-
-            const content: TextContent[] = [
-              {
-                type: "text",
-                text:
-                  `Governances for ${args.address}:\n\n` +
-                  result.account.delegatedGovernors
-                    .map(
-                      (gov) => `- Name: ${gov.name}\n` + `  Type: ${gov.type}\n`
-                    )
-                    .join("\n\n"),
-              },
-            ];
-
-            return { content };
-          } catch (error) {
-            throw new Error(
-              `Error fetching address governances: ${
-                error instanceof Error ? error.message : "Unknown error"
-              }`
-            );
-          }
-        }
-        default: {
-          throw new Error(`Unknown tool: ${name}`);
+          return { content };
+        } catch (error) {
+          throw new Error(
+            `Error fetching proposals: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
         }
       }
+
+      if (name === "get-proposal") {
+        try {
+          // If we have just an ID, we can use it directly
+          if (typeof args.id === "string") {
+            const data = await this.service.getProposal({
+              id: args.id,
+              includeArchived:
+                typeof args.includeArchived === "boolean"
+                  ? args.includeArchived
+                  : undefined,
+              isLatest:
+                typeof args.isLatest === "boolean" ? args.isLatest : undefined,
+            });
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: TallyService.formatProposal(data.proposal),
+                },
+              ],
+            };
+          }
+
+          // If we have onchainId and governorId, use them together
+          if (
+            typeof args.onchainId === "string" &&
+            typeof args.governorId === "string"
+          ) {
+            const data = await this.service.getProposal({
+              onchainId: args.onchainId,
+              governorId: args.governorId,
+              includeArchived:
+                typeof args.includeArchived === "boolean"
+                  ? args.includeArchived
+                  : undefined,
+              isLatest:
+                typeof args.isLatest === "boolean" ? args.isLatest : undefined,
+            });
+            return {
+              content: [
+                {
+                  type: "text",
+                  text: TallyService.formatProposal(data.proposal),
+                },
+              ],
+            };
+          }
+
+          throw new Error(
+            "Must provide either id or both onchainId and governorId"
+          );
+        } catch (error) {
+          throw new Error(
+            `Error fetching proposal: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+        }
+      }
+
+      if (name === "get-address-proposals-created") {
+        try {
+          if (typeof args.address !== "string") {
+            throw new Error("address must be a string");
+          }
+
+          const result = await this.service.getAddressProposals({
+            address: args.address,
+            limit: args.limit,
+            afterCursor: args.afterCursor,
+          });
+
+          const proposals = result.proposals.nodes;
+          const content = proposals.map((proposal) => ({
+            id: proposal.id,
+            onchainId: proposal.onchainId,
+            governorId: proposal.governor.id,
+            description: proposal.metadata?.description,
+            status: proposal.status,
+            createdAt: proposal.createdAt,
+            blockTimestamp: proposal.block?.timestamp,
+            voteStats: proposal.voteStats,
+          }));
+
+          return {
+            content,
+            pageInfo: result.proposals.pageInfo,
+          };
+        } catch (error) {
+          throw new Error(
+            `Error fetching address proposals: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+        }
+      }
+
+      if (name === "get-address-daos-proposals") {
+        try {
+          if (typeof args.address !== "string") {
+            throw new Error("address must be a string");
+          }
+
+          const result = await this.service.getAddressDAOProposals({
+            address: args.address,
+            organizationSlug: args.organizationSlug,
+            limit: args.limit,
+            afterCursor: args.afterCursor,
+          });
+
+          const proposals = result.proposals.nodes;
+          const content = proposals.map((proposal) => ({
+            id: proposal.id,
+            onchainId: proposal.onchainId,
+            governorId: proposal.governor.id,
+            organizationId: proposal.governor.organization.id,
+            organizationName: proposal.governor.organization.name,
+            organizationSlug: proposal.governor.organization.slug,
+            description: proposal.metadata?.description,
+            status: proposal.status,
+            createdAt: proposal.createdAt,
+            blockTimestamp: proposal.block?.timestamp,
+            proposerAddress: proposal.proposer?.address,
+            creatorAddress: proposal.creator?.address,
+            startTimestamp: proposal.start?.timestamp,
+            voteStats: proposal.voteStats,
+            participationType: proposal.participationType,
+          }));
+
+          return {
+            content,
+            pageInfo: result.proposals.pageInfo,
+          };
+        } catch (error) {
+          throw new Error(
+            `Error fetching address DAO proposals: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+        }
+      }
+
+      if (name === "get-address-votes") {
+        try {
+          if (typeof args.address !== "string") {
+            throw new Error("address must be a string");
+          }
+          if (typeof args.organizationSlug !== "string") {
+            throw new Error("organizationSlug must be a string");
+          }
+
+          const result = await this.service.getAddressVotes({
+            address: args.address,
+            organizationSlug: args.organizationSlug,
+            limit: typeof args.limit === "number" ? args.limit : undefined,
+            afterCursor:
+              typeof args.afterCursor === "string"
+                ? args.afterCursor
+                : undefined,
+          });
+
+          if (!result?.votes?.nodes) {
+            return {
+              content: [],
+              pageInfo: {
+                firstCursor: null,
+                lastCursor: null,
+              },
+            };
+          }
+
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text: JSON.stringify(result.votes.nodes),
+            },
+          ];
+
+          return {
+            content,
+            pageInfo: {
+              firstCursor: result.votes.pageInfo.firstCursor || null,
+              lastCursor: result.votes.pageInfo.lastCursor || null,
+            },
+          };
+        } catch (error) {
+          throw new Error(
+            `Error fetching address votes: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+        }
+      }
+
+      if (name === "get-address-created-proposals") {
+        try {
+          if (typeof args.address !== "string") {
+            throw new Error("address must be a string");
+          }
+
+          const result = await this.service.getAddressCreatedProposals({
+            address: args.address,
+            limit: args.limit,
+            afterCursor: args.afterCursor,
+          });
+
+          const proposals = result.proposals.nodes;
+          const content = proposals.map((proposal) => ({
+            id: proposal.id,
+            onchainId: proposal.onchainId,
+            governorId: proposal.governor.id,
+            description: proposal.metadata?.description,
+            status: proposal.status,
+            createdAt: proposal.createdAt,
+            blockTimestamp: proposal.block?.timestamp,
+            voteStats: proposal.voteStats,
+          }));
+
+          return {
+            content,
+            pageInfo: result.proposals.pageInfo,
+          };
+        } catch (error) {
+          throw new Error(
+            `Error fetching address created proposals: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+        }
+      }
+
+      if (name === "get-address-received-delegations") {
+        try {
+          if (typeof args.address !== "string") {
+            throw new Error("address must be a string");
+          }
+
+          const result = await this.service.getAddressReceivedDelegations({
+            address: args.address,
+            organizationSlug:
+              typeof args.organizationSlug === "string"
+                ? args.organizationSlug
+                : undefined,
+            governorId:
+              typeof args.governorId === "string" ? args.governorId : undefined,
+            limit: typeof args.limit === "number" ? args.limit : undefined,
+            sortBy:
+              typeof args.sortBy === "string"
+                ? (args.sortBy as "votes")
+                : undefined,
+            isDescending:
+              typeof args.isDescending === "boolean"
+                ? args.isDescending
+                : undefined,
+          });
+
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text:
+                `Received delegations for ${args.address}:\n\n` +
+                result.nodes
+                  .map(
+                    (node) =>
+                      `- From: ${node.delegator.address}${
+                        node.delegator.name ? ` (${node.delegator.name})` : ""
+                      }\n` +
+                      `  Votes: ${node.votes}\n` +
+                      `  Block: ${node.blockNumber}`
+                  )
+                  .join("\n\n"),
+            },
+          ];
+
+          return { content };
+        } catch (error) {
+          throw new Error(
+            `Error fetching received delegations: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+        }
+      }
+
+      if (name === "get-delegate-statement") {
+        try {
+          if (typeof args.address !== "string") {
+            throw new Error("address must be a string");
+          }
+
+          // Check for mutually exclusive parameters
+          if (typeof args.governorId === "string" && typeof args.organizationSlug === "string") {
+            throw new Error("Cannot provide both governorId and organizationSlug");
+          }
+
+          let result;
+          if (typeof args.governorId === "string") {
+            result = await this.service.getDelegateStatement({
+              address: args.address,
+              governorId: args.governorId
+            });
+          } else if (typeof args.organizationSlug === "string") {
+            result = await this.service.getDelegateStatement({
+              address: args.address,
+              organizationSlug: args.organizationSlug
+            });
+          } else {
+            throw new Error("Either governorId or organizationSlug must be provided");
+          }
+
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text: JSON.stringify(result),
+            },
+          ];
+
+          return { content };
+        } catch (error) {
+          throw new Error(
+            `Error fetching delegate statement: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+        }
+      }
+
+      if (name === "get-address-governances") {
+        try {
+          if (typeof args.address !== "string") {
+            throw new Error("address must be a string");
+          }
+
+          const result = await this.service.getAddressGovernances({
+            address: args.address,
+          });
+
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text:
+                `Governances for ${args.address}:\n\n` +
+                result.account.delegatedGovernors
+                  .map(
+                    (gov) => `- Name: ${gov.name}\n` + `  Type: ${gov.type}\n`
+                  )
+                  .join("\n\n"),
+            },
+          ];
+
+          return { content };
+        } catch (error) {
+          throw new Error(
+            `Error fetching address governances: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+        }
+      }
+
+      throw new Error(`Unknown tool: ${name}`);
     });
   }
 

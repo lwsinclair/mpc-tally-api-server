@@ -1,9 +1,7 @@
 import { GraphQLClient } from 'graphql-request';
 import { LIST_DELEGATES_QUERY } from './delegates.queries.js';
-import { DelegatesResponse, Delegate } from './delegates.types.js';
-import { PageInfo } from '../organizations/organizations.types.js';
-import { getDAO } from '../organizations/getDAO.js';
 import { globalRateLimiter } from '../utils/rateLimiter.js';
+import { getDAO } from '../organizations/getDAO.js';
 import {
   TallyAPIError,
   RateLimitError,
@@ -17,9 +15,7 @@ const MAX_RETRIES = 5;
 export async function listDelegates(
   client: GraphQLClient,
   input: {
-    organizationId?: string;
-    organizationSlug?: string;
-    governorId?: string;
+    organizationSlug: string;
     limit?: number;
     afterCursor?: string;
     beforeCursor?: string;
@@ -27,43 +23,21 @@ export async function listDelegates(
     hasDelegators?: boolean;
     isSeekingDelegation?: boolean;
   }
-): Promise<{
-  delegates: Delegate[];
-  pageInfo: PageInfo;
-}> {
+): Promise<any> {
   let retries = 0;
   let lastError: Error | null = null;
   let requestVariables: any;
 
   while (retries < MAX_RETRIES) {
     try {
-      let organizationId = input.organizationId;
-
-      // If we got a governor ID instead of organization ID, treat it as such
-      if (organizationId?.startsWith('eip155:')) {
-        if (!input.organizationSlug) {
-          throw new ValidationError('Organization slug is required when using a governor ID as organization ID');
-        }
-        await globalRateLimiter.waitForRateLimit();
-        const dao = await getDAO(client, input.organizationSlug);
-        organizationId = dao.id;
+      if (!input.organizationSlug) {
+        throw new ValidationError('organizationSlug is required');
       }
 
-      // If organizationId is not provided but slug is, get the DAO first
-      if (!organizationId && input.organizationSlug) {
-        await globalRateLimiter.waitForRateLimit();
-        const dao = await getDAO(client, input.organizationSlug);
-        organizationId = dao.id;
-      }
-
-      // If we have a governorId but no organization info, get the DAO
-      if (!organizationId && input.governorId) {
-        throw new ValidationError('Using governorId without organizationSlug is not currently supported. Please provide organizationSlug.');
-      }
-
-      if (!organizationId) {
-        throw new ValidationError('Either organizationId, organizationSlug, or governorId with organizationSlug must be provided');
-      }
+      // Get the DAO to get its ID
+      await globalRateLimiter.waitForRateLimit();
+      const dao = await getDAO(client, input.organizationSlug);
+      const organizationId = dao.id;
 
       // Wait for rate limit before making the request
       await globalRateLimiter.waitForRateLimit();
@@ -88,22 +62,16 @@ export async function listDelegates(
         },
       };
 
-      const response = await client.request<DelegatesResponse>(LIST_DELEGATES_QUERY, requestVariables);
+      const response = await client.request<Record<string, any>>(LIST_DELEGATES_QUERY, requestVariables);
 
       // Update rate limiter with response headers if available
       if ('headers' in response) {
         globalRateLimiter.updateFromHeaders(response.headers as Record<string, string>);
       }
 
-      // Check if we got any delegates
-      if (!response.delegates?.nodes?.length) {
-        throw new ValidationError('No delegates found for the given organization');
-      }
+      // Return the raw response
+      return response;
 
-      return {
-        delegates: response.delegates.nodes,
-        pageInfo: response.delegates.pageInfo,
-      };
     } catch (error) {
       if (error instanceof Error) {
         lastError = error;
