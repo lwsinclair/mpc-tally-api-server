@@ -290,26 +290,35 @@ export class TallyServer {
         },
         {
           name: "get-address-created-proposals",
-          description: "Returns proposals created by a given address",
+          description: "Get proposals created by an address for a specific organization",
           inputSchema: {
             type: "object",
-            required: ["address"],
+            required: ["address", "organizationSlug"],
             properties: {
               address: {
                 type: "string",
-                description: "The Ethereum address",
+                description: "The Ethereum address to get created proposals for"
               },
-              limit: {
-                type: "number",
-                description:
-                  "Maximum number of proposals to return (default: 20, max: 50)",
-              },
-              afterCursor: {
+              organizationSlug: {
                 type: "string",
-                description: "Cursor for pagination",
-              },
-            },
+                description: "The organization slug to get proposals from"
+              }
+            }
           },
+          handler: async function (input: any) {
+            const { address, organizationSlug } = input;
+            if (typeof address !== 'string') {
+              throw new Error('address must be a string');
+            }
+            if (typeof organizationSlug !== 'string') {
+              throw new Error('organizationSlug must be a string');
+            }
+            const result = await this.service.getAddressCreatedProposals({
+              address,
+              organizationSlug
+            });
+            return JSON.stringify(result);
+          }
         },
         {
           name: "get-address-daos-proposals",
@@ -317,11 +326,15 @@ export class TallyServer {
             "Returns proposals from DAOs where a given address has participated (voted, proposed, etc.)",
           inputSchema: {
             type: "object",
-            required: ["address"],
+            required: ["address", "organizationSlug"],
             properties: {
               address: {
                 type: "string",
                 description: "The Ethereum address",
+              },
+              organizationSlug: {
+                type: "string",
+                description: "The organization slug to get proposals from",
               },
               limit: {
                 type: "number",
@@ -340,7 +353,7 @@ export class TallyServer {
           description: "Returns delegations received by an address",
           inputSchema: {
             type: "object",
-            required: ["address"],
+            required: ["address", "organizationSlug"],
             properties: {
               address: {
                 type: "string",
@@ -350,10 +363,6 @@ export class TallyServer {
               organizationSlug: {
                 type: "string",
                 description: "Filter by organization slug",
-              },
-              governorId: {
-                type: "string",
-                description: "Filter by governor ID",
               },
               limit: {
                 type: "number",
@@ -694,37 +703,34 @@ export class TallyServer {
         }
       }
 
-      if (name === "get-address-proposals-created") {
+      if (name === "get-address-created-proposals") {
         try {
           if (typeof args.address !== "string") {
             throw new Error("address must be a string");
           }
+          if (typeof args.organizationSlug !== "string") {
+            throw new Error("organizationSlug must be a string");
+          }
 
-          const result = await this.service.getAddressProposals({
+          const result = await this.service.getAddressCreatedProposals({
             address: args.address,
-            limit: args.limit,
-            afterCursor: args.afterCursor,
+            organizationSlug: args.organizationSlug,
+            limit: typeof args.limit === "number" ? args.limit : undefined,
+            afterCursor: typeof args.afterCursor === "string" ? args.afterCursor : undefined,
+            beforeCursor: typeof args.beforeCursor === "string" ? args.beforeCursor : undefined
           });
 
-          const proposals = result.proposals.nodes;
-          const content = proposals.map((proposal) => ({
-            id: proposal.id,
-            onchainId: proposal.onchainId,
-            governorId: proposal.governor.id,
-            description: proposal.metadata?.description,
-            status: proposal.status,
-            createdAt: proposal.createdAt,
-            blockTimestamp: proposal.block?.timestamp,
-            voteStats: proposal.voteStats,
-          }));
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text: JSON.stringify(result),
+            },
+          ];
 
-          return {
-            content,
-            pageInfo: result.proposals.pageInfo,
-          };
+          return { content };
         } catch (error) {
           throw new Error(
-            `Error fetching address proposals: ${
+            `Error fetching address created proposals: ${
               error instanceof Error ? error.message : "Unknown error"
             }`
           );
@@ -735,6 +741,9 @@ export class TallyServer {
         try {
           if (typeof args.address !== "string") {
             throw new Error("address must be a string");
+          }
+          if (typeof args.organizationSlug !== "string") {
+            throw new Error("organizationSlug must be a string");
           }
 
           const result = await this.service.getAddressDAOProposals({
@@ -870,41 +879,22 @@ export class TallyServer {
           if (typeof args.address !== "string") {
             throw new Error("address must be a string");
           }
+          if (typeof args.organizationSlug !== "string") {
+            throw new Error("organizationSlug must be a string");
+          }
 
           const result = await this.service.getAddressReceivedDelegations({
             address: args.address,
-            organizationSlug:
-              typeof args.organizationSlug === "string"
-                ? args.organizationSlug
-                : undefined,
-            governorId:
-              typeof args.governorId === "string" ? args.governorId : undefined,
+            organizationSlug: args.organizationSlug,
             limit: typeof args.limit === "number" ? args.limit : undefined,
-            sortBy:
-              typeof args.sortBy === "string"
-                ? (args.sortBy as "votes")
-                : undefined,
-            isDescending:
-              typeof args.isDescending === "boolean"
-                ? args.isDescending
-                : undefined,
+            sortBy: typeof args.sortBy === "string" ? (args.sortBy as "votes") : undefined,
+            isDescending: typeof args.isDescending === "boolean" ? args.isDescending : undefined,
           });
 
           const content: TextContent[] = [
             {
               type: "text",
-              text:
-                `Received delegations for ${args.address}:\n\n` +
-                result.nodes
-                  .map(
-                    (node) =>
-                      `- From: ${node.delegator.address}${
-                        node.delegator.name ? ` (${node.delegator.name})` : ""
-                      }\n` +
-                      `  Votes: ${node.votes}\n` +
-                      `  Block: ${node.blockNumber}`
-                  )
-                  .join("\n\n"),
+              text: JSON.stringify(result),
             },
           ];
 
@@ -974,13 +964,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text:
-                `Governances for ${args.address}:\n\n` +
-                result.account.delegatedGovernors
-                  .map(
-                    (gov) => `- Name: ${gov.name}\n` + `  Type: ${gov.type}\n`
-                  )
-                  .join("\n\n"),
+              text: JSON.stringify(result),
             },
           ];
 
