@@ -449,6 +449,84 @@ export class TallyServer {
             },
           },
         },
+        {
+          name: "get-proposal-timeline",
+          description: "Get the timeline of events for a specific proposal",
+          inputSchema: {
+            type: "object",
+            required: ["proposalId"],
+            properties: {
+              proposalId: {
+                type: "string",
+                description: "The ID of the proposal to get the timeline for"
+              }
+            }
+          },
+          handler: async function(this: { service: TallyService }, input: Record<string, unknown>) {
+            if (typeof input.proposalId !== 'string') {
+              throw new Error('proposalId must be a string');
+            }
+            const result = await this.service.getProposalTimeline({
+              proposalId: input.proposalId
+            });
+            const content: TextContent[] = [
+              {
+                type: "text",
+                text: JSON.stringify(result)
+              }
+            ];
+            return { content };
+          }
+        },
+        {
+          name: "get-proposal-voters",
+          description: "Get a list of all voters who have voted on a specific proposal",
+          inputSchema: {
+            type: "object",
+            required: ["proposalId"],
+            properties: {
+              proposalId: {
+                type: "string",
+                description: "The ID of the proposal to get voters for"
+              },
+              limit: {
+                type: "number",
+                description: "Maximum number of voters to return (default: 20)"
+              },
+              afterCursor: {
+                type: "string",
+                description: "Cursor for pagination"
+              },
+              beforeCursor: {
+                type: "string",
+                description: "Cursor for previous page pagination"
+              },
+              sortBy: {
+                type: "string",
+                enum: ["votes", "timestamp"],
+                description: "How to sort the voters"
+              },
+              isDescending: {
+                type: "boolean",
+                description: "Sort in descending order"
+              }
+            }
+          }
+        },
+        {
+          name: "get-address-metadata",
+          description: "Get metadata information about a specific Ethereum address",
+          inputSchema: {
+            type: "object",
+            required: ["address"],
+            properties: {
+              address: {
+                type: "string",
+                description: "The Ethereum address to get metadata for (0x format)",
+              },
+            },
+          },
+        },
       ];
 
       return { tools };
@@ -954,6 +1032,75 @@ export class TallyServer {
             }`
           );
         }
+      }
+
+      if (name === "get-proposal-timeline") {
+        try {
+          if (typeof args.proposalId !== 'string') {
+            throw new Error('proposalId must be a string');
+          }
+          const result = await this.service.getProposalTimeline({
+            proposalId: args.proposalId
+          });
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text: JSON.stringify(result)
+            }
+          ];
+          return { content };
+        } catch (error) {
+          throw new Error(
+            `Error fetching proposal timeline: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+        }
+      }
+
+      if (name === "get-proposal-voters") {
+        try {
+          if (typeof args.proposalId !== "string") {
+            throw new Error("proposalId must be a string");
+          }
+
+          const result = await this.service.getProposalVoters({
+            proposalId: args.proposalId,
+            limit: typeof args.limit === "number" ? args.limit : undefined,
+            afterCursor: typeof args.afterCursor === "string" ? args.afterCursor : undefined,
+            beforeCursor: typeof args.beforeCursor === "string" ? args.beforeCursor : undefined,
+            sortBy: typeof args.sortBy === "string" ? args.sortBy as "votes" | "timestamp" : undefined,
+            isDescending: typeof args.isDescending === "boolean" ? args.isDescending : undefined
+          });
+
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text: JSON.stringify(result)
+            }
+          ];
+
+          return { content };
+        } catch (error) {
+          throw new Error(
+            `Error fetching proposal voters: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+        }
+      }
+
+      if (name === "get-address-metadata") {
+        const { address } = args as { address: string };
+        const result = await this.service.getAddressMetadata({
+          address,
+        });
+        return {
+          content: [{
+            type: "text",
+            text: JSON.stringify(result, null, 2),
+          }],
+        };
       }
 
       throw new Error(`Unknown tool: ${name}`);
