@@ -90,44 +90,32 @@ export const GET_ADDRESS_DAO_PROPOSALS_QUERY = gql`
   }
 `;
 
-const VOTE_FIELDS = gql`
-  fragment VoteFields on Vote {
-    id
-    voter {
-      address
-    }
-    proposal {
-      id
-      governor {
-        id
-        organization {
-          id
-          name
-          slug
-        }
-      }
-    }
-    type
-    amount
-    reason
-    block {
-      timestamp
-    }
-  }
-`;
-
 export const GET_ADDRESS_VOTES_QUERY = gql`
-  ${VOTE_FIELDS}
-  query GetVotes($input: VotesInput!) {
+  query GetAddressVotes($input: VotesInput!) {
     votes(input: $input) {
       nodes {
         ... on Vote {
-          ...VoteFields
+          id
+          type
+          amount
+          voter {
+            address
+          }
+          proposal {
+            id
+          }
+          block {
+            timestamp
+            number
+          }
+          chainId
+          txHash
         }
       }
       pageInfo {
         firstCursor
         lastCursor
+        count
       }
     }
   }
@@ -174,6 +162,109 @@ export const GET_ADDRESS_CREATED_PROPOSALS_QUERY = gql`
       pageInfo {
         firstCursor
         lastCursor
+      }
+    }
+  }
+`;
+
+export const GET_ADDRESS_METADATA_QUERY = gql`
+  query GetAddressMetadata($address: Address!) {
+    address(address: $address) {
+      address
+      accounts {
+        id
+        address
+        ens
+        name
+        bio
+        picture
+      }
+    }
+  }
+`;
+
+export const GET_ADDRESS_SAFES_QUERY = gql`
+  query GetAddressSafes($accountId: AccountID!) {
+    account(id: $accountId) {
+      safes
+    }
+  }
+`;
+
+export const GET_ADDRESS_GOVERNANCES_QUERY = gql`
+  query GetAddressGovernances($accountId: AccountID!) {
+    account(id: $accountId) {
+      delegatedGovernors {
+        id
+        name
+        type
+        organization {
+          id
+          name
+          slug
+          metadata {
+            icon
+          }
+        }
+        stats {
+          proposalsCount
+          delegatesCount
+          tokenHoldersCount
+        }
+        tokens {
+          id
+          name
+          symbol
+          decimals
+        }
+      }
+    }
+  }
+`;
+
+export const GET_ADDRESS_RECEIVED_DELEGATIONS_QUERY = gql`
+  query ReceivedDelegationsGovernance($input: DelegationsInput!) {
+    delegators(input: $input) {
+      nodes {
+        chainId
+        delegator {
+          address
+          ens
+          name
+          picture
+          twitter
+        }
+        blockNumber
+        blockTimestamp
+        votes
+      }
+      pageInfo {
+        firstCursor
+        lastCursor
+      }
+    }
+  }
+`;
+
+export const GET_DELEGATE_STATEMENT_QUERY = gql`
+  query GetDelegateStatement($accountId: AccountID!, $governorId: ID!) {
+    account(id: $accountId) {
+      delegateStatement(governorId: $governorId) {
+        id
+        address
+        statement
+        statementSummary
+        isSeekingDelegation
+        issues {
+          id
+          name
+        }
+        lastUpdated
+        governor {
+          id
+          name
+          type
+        }
       }
     }
   }

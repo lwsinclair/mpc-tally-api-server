@@ -17,8 +17,7 @@ export interface AddressProposalsResponse {
 
 export interface AddressDAOProposalsInput {
   address: string;
-  governorId?: string;
-  organizationSlug?: string;
+  organizationSlug: string;
   limit?: number;
   afterCursor?: string;
 }
@@ -32,33 +31,57 @@ export interface AddressDAOProposalsResponse {
   };
 }
 
+export enum VoteType {
+  Abstain = 'abstain',
+  Against = 'against',
+  For = 'for',
+  PendingAbstain = 'pendingabstain',
+  PendingAgainst = 'pendingagainst',
+  PendingFor = 'pendingfor'
+}
+
+export interface Block {
+  timestamp: string;
+  number: number;
+}
+
+export interface Account {
+  id: string;
+  address: string;
+  name?: string;
+  picture?: string;
+  twitter?: string;
+}
+
 export interface Vote {
   id: string;
-  voter: {
-    address: string;
-  };
+  amount: string;  // Uint256 represented as string
+  block: Block;
+  chainId: string; // ChainID represented as string
+  isBridged?: boolean;
   proposal: {
     id: string;
-    governor: {
-      id: string;
-      organization: {
-        id: string;
-        name: string;
-        slug: string;
-      };
-    };
   };
-  type: 'for' | 'against' | 'abstain';
-  amount: string;
-  reason: string | null;
-  block: {
-    timestamp: string;
+  reason?: string;
+  type: VoteType;  // Using our existing VoteType enum
+  txHash: string;  // Hash represented as string
+  voter: Account;
+}
+
+export interface VotesResponse {
+  nodes: Vote[];
+  pageInfo: {
+    firstCursor: string;
+    lastCursor: string;
+    count: number;
   };
 }
 
 export interface AddressVotesInput {
   address: string;
   organizationSlug: string;
+  limit?: number;
+  afterCursor?: string;
 }
 
 export interface AddressVotesResponse {
@@ -67,15 +90,14 @@ export interface AddressVotesResponse {
     pageInfo: {
       firstCursor: string;
       lastCursor: string;
+      count: number;
     };
   };
 }
 
 export interface AddressCreatedProposalsInput {
   address: string;
-  limit?: number;
-  afterCursor?: string;
-  beforeCursor?: string;
+  organizationSlug: string;
 }
 
 export interface AddressCreatedProposalsResponse {
@@ -118,4 +140,81 @@ export interface AddressCreatedProposalsResponse {
       lastCursor: string;
     };
   };
+}
+
+export interface AddressMetadataInput {
+  address: string;
+}
+
+export interface AddressAccount {
+  id: string;
+  address: string;
+  ens?: string;
+  name?: string;
+  bio?: string;
+  picture?: string;
+}
+
+export interface AddressMetadataResponse {
+  address: string;
+  accounts: AddressAccount[];
+}
+
+export interface AddressSafesInput {
+  address: string;
+}
+
+export interface AddressSafesResponse {
+  account: {
+    safes: string[];
+  };
+}
+
+export interface AddressGovernancesInput {
+  address: string;
+}
+
+export interface AddressGovernance {
+  id: string;
+  name: string;
+  type: string;
+  chainId: string;
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+    metadata: {
+      icon: string | null;
+    };
+  };
+  stats: {
+    proposalsCount: number;
+    delegatesCount: number;
+    tokenHoldersCount: number;
+  };
+  tokens: Array<{
+    id: string;
+    name: string;
+    symbol: string;
+    decimals: number;
+  }>;
+}
+
+export interface AddressGovernancesResponse {
+  account: {
+    delegatedGovernors: AddressGovernance[];
+  };
+}
+
+export interface GetAddressReceivedDelegationsInput {
+  address: string;
+  organizationSlug: string;
+  limit?: number;
+  sortBy?: 'votes';
+  isDescending?: boolean;
+}
+
+export interface GetAddressCreatedProposalsInput {
+  address: string;
+  organizationSlug: string;
 } 
