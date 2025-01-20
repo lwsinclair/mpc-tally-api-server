@@ -1,8 +1,9 @@
 import { GraphQLClient } from 'graphql-request';
 import { GET_DAO_QUERY, GET_TOKEN_QUERY } from './organizations.queries.js';
-import { Organization, Token } from './organizations.types.js';
+import { Organization, Token, TokenWithSupply } from './organizations.types.js';
 import { globalRateLimiter } from '../utils/rateLimiter.js';
 import { TallyAPIError, RateLimitError } from '../errors/apiErrors.js';
+import { formatTokenAmount, FormattedTokenAmount } from '../../utils/formatTokenAmount.js';
 
 export async function getDAO(
   client: GraphQLClient,
@@ -64,12 +65,12 @@ export async function getDAO(
 export async function getDAOTokens(
   client: GraphQLClient,
   tokenIds: string[]
-): Promise<Token[]> {
+): Promise<TokenWithSupply[]> {
   if (!tokenIds || tokenIds.length === 0) {
     return [];
   }
 
-  const tokens: Token[] = [];
+  const tokens: TokenWithSupply[] = [];
   
   for (const tokenId of tokenIds) {
     try {
@@ -79,7 +80,12 @@ export async function getDAOTokens(
       const response = await client.request<{ token: Token }>(GET_TOKEN_QUERY, { input });
       
       if (response.token) {
-        tokens.push(response.token);
+        const token = response.token;
+        const formattedSupply = formatTokenAmount(token.supply, token.decimals, token.symbol);
+        tokens.push({
+          ...token,
+          formattedSupply,
+        });
       }
     } catch (error) {
       console.warn(`Failed to fetch token ${tokenId}: ${error instanceof Error ? error.message : 'Unknown error'}`);

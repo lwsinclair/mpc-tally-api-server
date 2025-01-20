@@ -1,3 +1,5 @@
+import { FormattedTokenAmount } from '../../utils/formatTokenAmount.js';
+
 // Basic Types
 export type OrganizationsSortBy = "id" | "name" | "explore" | "popular";
 
@@ -37,6 +39,18 @@ export interface ListDAOsParams {
 }
 
 // Response Types
+export interface Token {
+  id: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  supply: string;  // Uint256 represented as string
+}
+
+export interface TokenWithSupply extends Token {
+  formattedSupply: FormattedTokenAmount;
+}
+
 export interface Organization {
   id: string;
   name: string;
