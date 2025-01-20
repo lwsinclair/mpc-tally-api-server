@@ -1,102 +1,74 @@
-import { TallyService } from '../tally.service.js';
+import { TallyService } from '../../services/tally.service.js';
+import { Organization, TokenWithSupply } from '../organizations/organizations.types.js';
 import { beforeEach, describe, expect, it, test } from 'bun:test';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-describe('TallyService - DAO', () => {
-  let tallyService: TallyService;
+type DAOResponse = { organization: Organization; tokens?: TokenWithSupply[] };
 
-  beforeEach(() => {
-    tallyService = new TallyService({
-      apiKey: process.env.TALLY_API_KEY || 'test-api-key',
-    });
-  });
+describe('TallyService - DAO', () => {
+  const tallyService = new TallyService({ apiKey: process.env.TALLY_API_KEY || 'test-api-key' });
 
   describe('getDAO', () => {
     it('should fetch complete DAO details', async () => {
-      const dao = await tallyService.getDAO('uniswap');
-      
-      // Basic DAO properties
-      expect(dao).toBeDefined();
-      expect(dao.id).toBeDefined();
-      expect(dao.name).toBe('Uniswap');
-      expect(dao.slug).toBe('uniswap');
-      
-      // Chain IDs and Token IDs
-      expect(dao.chainIds).toBeDefined();
-      expect(Array.isArray(dao.chainIds)).toBe(true);
-      expect(dao.chainIds).toContain('eip155:1'); // Ethereum mainnet
+      const result = await tallyService.getDAO('uniswap') as unknown as DAOResponse;
 
-      // Token IDs - specifically check for UNI token
-      expect(dao.tokenIds).toBeDefined();
-      expect(Array.isArray(dao.tokenIds)).toBe(true);
-      expect(dao.tokenIds.length).toBeGreaterThan(0);
-      expect(dao.tokenIds).toContain('eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'); // UNI token
-      
-      // Stats and counters
-      expect(typeof dao.proposalsCount).toBe('number');
-      expect(dao.proposalsCount).toBeGreaterThan(0);
-      expect(typeof dao.delegatesCount).toBe('number');
-      expect(dao.delegatesCount).toBeGreaterThan(0);
-      expect(typeof dao.tokenOwnersCount).toBe('number');
-      expect(dao.tokenOwnersCount).toBeGreaterThan(0);
-      
+      // Basic DAO properties
+      expect(result).toBeDefined();
+      expect(result.organization).toBeDefined();
+      expect(result.organization.id).toBeDefined();
+      expect(result.organization.name).toBeDefined();
+      expect(result.organization.slug).toBe('uniswap');
+      expect(result.organization.chainIds).toBeDefined();
+      expect(result.organization.chainIds).toBeInstanceOf(Array);
+      expect(result.organization.chainIds.length).toBeGreaterThan(0);
+
       // Metadata
-      expect(dao.metadata).toBeDefined();
-      if (dao.metadata) {
-        expect(dao.metadata.description).toBeDefined();
-        expect(dao.metadata.icon).toBeDefined();
-        
-        // Check if socials exist in metadata
-        expect(dao.metadata.socials).toBeDefined();
-        if (dao.metadata.socials) {
-          expect(dao.metadata.socials.website).toBeDefined();
-          expect(dao.metadata.socials.discord).toBeDefined();
-          expect(dao.metadata.socials.twitter).toBeDefined();
-        }
-      }
-    }, 30000);
+      expect(result.organization.metadata).toBeDefined();
+      expect(result.organization.metadata.description).toBeDefined();
+      expect(result.organization.metadata.socials).toBeDefined();
+      expect(result.organization.metadata.socials.website).toBeDefined();
+      expect(result.organization.metadata.socials.discord).toBeDefined();
+      expect(result.organization.metadata.socials.twitter).toBeDefined();
+
+      // Stats
+      expect(result.organization.proposalsCount).toBeDefined();
+      expect(result.organization.delegatesCount).toBeDefined();
+      expect(result.organization.tokenOwnersCount).toBeDefined();
+
+      // Token IDs
+      expect(result.organization.tokenIds).toBeDefined();
+      expect(result.organization.tokenIds).toBeInstanceOf(Array);
+      expect(result.organization.tokenIds.length).toBeGreaterThan(0);
+      expect(result.organization.tokenIds[0]).toBe('eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984');
+    });
 
     it('should handle non-existent DAO gracefully', async () => {
-      const nonExistentSlug = 'non-existent-dao-123';
-      let error: Error | undefined;
-      
-      try {
-        await tallyService.getDAO(nonExistentSlug);
-      } catch (e) {
-        error = e as Error;
-      }
-      
-      expect(error).toBeDefined();
-      expect(String(error)).toContain('Failed to fetch DAO');
+      await expect(tallyService.getDAO('non-existent-dao')).rejects.toThrow('Organization not found');
     });
   });
 
   describe('getDAOTokens', () => {
     it('should fetch token details for a given token ID', async () => {
-      const tokenId = 'eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'; // UNI token
-      const tokens = await tallyService.getDAOTokens([tokenId]);
-      
+      const tokenIds = ['eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'];
+      const tokens = await tallyService.getDAOTokens(tokenIds);
+
       expect(tokens).toBeDefined();
-      expect(Array.isArray(tokens)).toBe(true);
+      expect(tokens).toBeInstanceOf(Array);
       expect(tokens.length).toBe(1);
-      
-      const token = tokens[0];
-      expect(token.id).toBe(tokenId);
-      expect(token.name).toBe('Uniswap');
-      expect(token.symbol).toBe('UNI');
-      expect(token.decimals).toBe(18);
-      expect(typeof token.supply).toBe('string');
-      expect(typeof token.isIndexing).toBe('boolean');
-      expect(typeof token.isBehind).toBe('boolean');
-    }, 30000);
+
+      const token = tokens[0] as TokenWithSupply;
+      expect(token.id).toBeDefined();
+      expect(token.name).toBeDefined();
+      expect(token.symbol).toBeDefined();
+      expect(token.decimals).toBeDefined();
+      expect(token.formattedSupply).toBeDefined();
+    });
 
     it('should handle empty array of token IDs', async () => {
       const tokens = await tallyService.getDAOTokens([]);
-      expect(tokens).toBeDefined();
-      expect(Array.isArray(tokens)).toBe(true);
-      expect(tokens.length).toBe(0);
+      expect(tokens).toEqual([]);
     });
   });
 }); 

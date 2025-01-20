@@ -8,7 +8,7 @@ import { formatTokenAmount, FormattedTokenAmount } from '../../utils/formatToken
 export async function getDAO(
   client: GraphQLClient,
   slug: string
-): Promise<Organization> {
+): Promise<{ organization: Organization; tokens?: TokenWithSupply[] }> {
   let lastError: Error | null = null;
   let retryCount = 0;
   const maxRetries = 5;
@@ -24,8 +24,17 @@ export async function getDAO(
       if (!response.organization) {
         throw new TallyAPIError(`DAO not found: ${slug}`);
       }
+
+      // Fetch token information if tokenIds exist
+      let tokens: TokenWithSupply[] | undefined;
+      if (response.organization.tokenIds && response.organization.tokenIds.length > 0) {
+        tokens = await getDAOTokens(client, response.organization.tokenIds);
+      }
       
-      return response.organization;
+      return {
+        ...response,
+        tokens
+      };
     } catch (error) {
       lastError = error as Error;
       
