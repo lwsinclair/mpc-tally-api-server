@@ -527,6 +527,20 @@ export class TallyServer {
             },
           },
         },
+        {
+          name: "get-proposal-security-analysis",
+          description: "Get security analysis for a specific proposal, including threat analysis and simulations",
+          inputSchema: {
+            type: "object",
+            required: ["proposalId"],
+            properties: {
+              proposalId: {
+                type: "string",
+                description: "The ID of the proposal to get security analysis for"
+              }
+            }
+          }
+        },
       ];
 
       return { tools };
@@ -553,7 +567,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: TallyService.formatDAOList(data.organizations.nodes),
+              text: JSON.stringify(data, null, 2),
             },
           ];
 
@@ -577,7 +591,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: TallyService.formatDAO(data),
+              text: JSON.stringify(data, null, 2),
             },
           ];
 
@@ -662,7 +676,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: TallyService.formatDelegatorsList(data.delegators),
+              text: JSON.stringify(data, null, 2),
             },
           ];
 
@@ -722,7 +736,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: TallyService.formatProposalsList(data.proposals.nodes),
+              text: JSON.stringify(data, null, 2),
             },
           ];
 
@@ -753,7 +767,7 @@ export class TallyServer {
               content: [
                 {
                   type: "text",
-                  text: TallyService.formatProposal(data.proposal),
+                  text: JSON.stringify(data, null, 2),
                 },
               ],
             };
@@ -778,7 +792,7 @@ export class TallyServer {
               content: [
                 {
                   type: "text",
-                  text: TallyService.formatProposal(data.proposal),
+                  text: JSON.stringify(data, null, 2),
                 },
               ],
             };
@@ -846,27 +860,11 @@ export class TallyServer {
             afterCursor: typeof args.afterCursor === "string" ? args.afterCursor : undefined,
           });
 
-          const proposals = result.proposals.nodes;
-          const content = proposals.map((proposal: any) => ({
-            id: proposal.id,
-            onchainId: proposal.onchainId,
-            governorId: proposal.governor?.id,
-            organizationId: proposal.governor?.organization?.id,
-            organizationName: proposal.governor?.organization?.name,
-            organizationSlug: proposal.governor?.organization?.slug,
-            description: proposal.metadata?.description,
-            status: proposal.status,
-            createdAt: proposal.createdAt,
-            blockTimestamp: proposal.block?.timestamp,
-            proposerAddress: proposal.proposer?.address,
-            creatorAddress: proposal.creator?.address,
-            startTimestamp: proposal.start?.timestamp,
-            voteStats: proposal.voteStats,
-            participationType: proposal.participationType,
-          }));
-
           return {
-            content: [{ type: "text", text: JSON.stringify(content) }],
+            content: [{ 
+              type: "text", 
+              text: JSON.stringify(result, null, 2) 
+            }],
             pageInfo: result.proposals.pageInfo,
           };
         } catch (error) {
@@ -1101,6 +1099,33 @@ export class TallyServer {
             text: JSON.stringify(result, null, 2),
           }],
         };
+      }
+
+      if (name === "get-proposal-security-analysis") {
+        try {
+          if (typeof args.proposalId !== "string") {
+            throw new Error("proposalId must be a string");
+          }
+
+          const result = await this.service.getProposalSecurityAnalysis({
+            proposalId: args.proposalId
+          });
+
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2)
+            }
+          ];
+
+          return { content };
+        } catch (error) {
+          throw new Error(
+            `Error fetching proposal security analysis: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+        }
       }
 
       throw new Error(`Unknown tool: ${name}`);
