@@ -61,7 +61,7 @@ export interface Organization {
   proposalsCount: number;
   tokenOwnersCount: number;
   delegatesCount: number;
-  delegatesVotesCount: string;
+  delegatesVotesCount: number;
   hasActiveProposals: boolean;
   metadata: {
     description: string;
@@ -70,8 +70,12 @@ export interface Organization {
       website: string;
       discord: string;
       twitter: string;
-    }
+    };
   };
+}
+
+export interface OrganizationWithTokens extends Organization {
+  tokens?: TokenWithSupply[];
 }
 
 export interface PageInfo {

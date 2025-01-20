@@ -1,11 +1,11 @@
 import { TallyService } from '../../services/tally.service.js';
-import { Organization, TokenWithSupply } from '../organizations/organizations.types.js';
+import { Organization, TokenWithSupply, OrganizationWithTokens } from '../organizations/organizations.types.js';
 import { beforeEach, describe, expect, it, test } from 'bun:test';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-type DAOResponse = { organization: Organization; tokens?: TokenWithSupply[] };
+type DAOResponse = { organization: OrganizationWithTokens };
 
 describe('TallyService - DAO', () => {
   const tallyService = new TallyService({ apiKey: process.env.TALLY_API_KEY || 'test-api-key' });
@@ -42,6 +42,17 @@ describe('TallyService - DAO', () => {
       expect(result.organization.tokenIds).toBeInstanceOf(Array);
       expect(result.organization.tokenIds.length).toBeGreaterThan(0);
       expect(result.organization.tokenIds[0]).toBe('eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984');
+
+      // Tokens
+      expect(result.organization.tokens).toBeDefined();
+      expect(result.organization.tokens).toBeInstanceOf(Array);
+      expect(result.organization.tokens!.length).toBeGreaterThan(0);
+      const token = result.organization.tokens![0];
+      expect(token.id).toBeDefined();
+      expect(token.name).toBeDefined();
+      expect(token.symbol).toBeDefined();
+      expect(token.decimals).toBeDefined();
+      expect(token.formattedSupply).toBeDefined();
     });
 
     it('should handle non-existent DAO gracefully', async () => {

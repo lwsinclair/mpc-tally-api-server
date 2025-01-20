@@ -1,6 +1,6 @@
 import { GraphQLClient } from 'graphql-request';
 import { GET_DAO_QUERY, GET_TOKEN_QUERY } from './organizations.queries.js';
-import { Organization, Token, TokenWithSupply } from './organizations.types.js';
+import { Organization, Token, TokenWithSupply, OrganizationWithTokens } from './organizations.types.js';
 import { globalRateLimiter } from '../utils/rateLimiter.js';
 import { TallyAPIError, RateLimitError } from '../errors/apiErrors.js';
 import { formatTokenAmount, FormattedTokenAmount } from '../../utils/formatTokenAmount.js';
@@ -8,7 +8,7 @@ import { formatTokenAmount, FormattedTokenAmount } from '../../utils/formatToken
 export async function getDAO(
   client: GraphQLClient,
   slug: string
-): Promise<{ organization: Organization; tokens?: TokenWithSupply[] }> {
+): Promise<{ organization: OrganizationWithTokens }> {
   let lastError: Error | null = null;
   let retryCount = 0;
   const maxRetries = 5;
@@ -33,7 +33,10 @@ export async function getDAO(
       
       return {
         ...response,
-        tokens
+        organization: {
+          ...response.organization,
+          tokens
+        }
       };
     } catch (error) {
       lastError = error as Error;
