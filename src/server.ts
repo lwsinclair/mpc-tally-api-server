@@ -567,7 +567,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: TallyService.formatDAOList(data.organizations.nodes),
+              text: JSON.stringify(data, null, 2),
             },
           ];
 
@@ -591,7 +591,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: TallyService.formatDAO(data),
+              text: JSON.stringify(data, null, 2),
             },
           ];
 
@@ -676,7 +676,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: TallyService.formatDelegatorsList(data.delegators),
+              text: JSON.stringify(data, null, 2),
             },
           ];
 
@@ -736,7 +736,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: TallyService.formatProposalsList(data.proposals.nodes),
+              text: JSON.stringify(data, null, 2),
             },
           ];
 
@@ -767,7 +767,7 @@ export class TallyServer {
               content: [
                 {
                   type: "text",
-                  text: TallyService.formatProposal(data.proposal),
+                  text: JSON.stringify(data, null, 2),
                 },
               ],
             };
@@ -792,7 +792,7 @@ export class TallyServer {
               content: [
                 {
                   type: "text",
-                  text: TallyService.formatProposal(data.proposal),
+                  text: JSON.stringify(data, null, 2),
                 },
               ],
             };
@@ -860,29 +860,14 @@ export class TallyServer {
             afterCursor: typeof args.afterCursor === "string" ? args.afterCursor : undefined,
           });
 
-          const proposals = result.proposals.nodes;
-          const content = proposals.map((proposal: any) => ({
-            id: proposal.id,
-            onchainId: proposal.onchainId,
-            governorId: proposal.governor?.id,
-            organizationId: proposal.governor?.organization?.id,
-            organizationName: proposal.governor?.organization?.name,
-            organizationSlug: proposal.governor?.organization?.slug,
-            description: proposal.metadata?.description,
-            status: proposal.status,
-            createdAt: proposal.createdAt,
-            blockTimestamp: proposal.block?.timestamp,
-            proposerAddress: proposal.proposer?.address,
-            creatorAddress: proposal.creator?.address,
-            startTimestamp: proposal.start?.timestamp,
-            voteStats: proposal.voteStats,
-            participationType: proposal.participationType,
-          }));
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2)
+            }
+          ];
 
-          return {
-            content: [{ type: "text", text: JSON.stringify(content) }],
-            pageInfo: result.proposals.pageInfo,
-          };
+          return { content };
         } catch (error) {
           throw new Error(
             `Error fetching address DAO proposals: ${
