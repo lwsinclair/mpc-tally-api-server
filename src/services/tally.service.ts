@@ -172,7 +172,7 @@ export class TallyService {
     return getAddressCreatedProposals(this.client, input);
   }
 
-  async getAddressMetadata(input: AddressMetadataInput): Promise<AddressMetadataResponse> {
+  async getAddressMetadata(input: AddressMetadataInput):Promise<Record<string, any>> {
     if (!input.address) {
       throw new Error('Address is required');
     }

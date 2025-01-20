@@ -1,11 +1,9 @@
-import { Organization, OrganizationsInput } from './organizations.types';
+import { OrganizationsInput } from './organizations.types';
 import { LIST_DAOS_QUERY, GET_DAO_QUERY } from './organizations.queries';
-import { formatDAO } from './organizations.service';
 import { GraphQLClient } from 'graphql-request';
 
 export class TallyService {
   private client: GraphQLClient;
-  public formatDAO: typeof formatDAO;
 
   constructor(endpoint: string, apiKey: string) {
     this.client = new GraphQLClient(endpoint, {
@@ -13,33 +11,32 @@ export class TallyService {
         'Api-Key': apiKey,
       },
     });
-    this.formatDAO = formatDAO;
   }
 
-  async getDAO(slug: string): Promise<Organization> {
+  async getDAO(slug: string): Promise<Record<string, any>> {
     try {
       const variables = {
         input: { slug }
       };
       
-      const response = await this.client.request(GET_DAO_QUERY, variables);
+      const response = await this.client.request<{ organization: Record<string, any> }>(GET_DAO_QUERY, variables);
       
       if (!response.organization) {
         throw new Error(`Organization not found: ${slug}`);
       }
 
-      return this.formatDAO(response.organization);
+      return response;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Error fetching DAO: ${message}`);
     }
   }
 
-  async listDAOs(input: OrganizationsInput): Promise<Organization[]> {
+  async listDAOs(input: OrganizationsInput): Promise<Record<string, any>> {
     try {
-      const response = await this.client.request(LIST_DAOS_QUERY, { input });
+      const response = await this.client.request<{ organizations: Record<string, any> }>(LIST_DAOS_QUERY, { input });
       
-      return response.organizations.nodes.map((node) => this.formatDAO(node));
+      return response;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       throw new Error(`Error fetching DAOs: ${message}`);

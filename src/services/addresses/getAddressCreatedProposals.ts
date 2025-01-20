@@ -20,7 +20,7 @@ export async function getAddressCreatedProposals(
       throw new Error('No governor found for organization');
     }
 
-    const response = await client.request(GET_ADDRESS_CREATED_PROPOSALS_QUERY, {
+    const response = await client.request<Record<string, any>>(GET_ADDRESS_CREATED_PROPOSALS_QUERY, {
       input: {
         filters: {
           proposer: input.address,

@@ -16,7 +16,7 @@ export async function getProposalSecurityAnalysis(
   input: GetProposalSecurityAnalysisInput
 ): Promise<ProposalSecurityAnalysisResponse> {
   let retries = 0;
-  let lastError: Error | null = null;
+  let lastError: unknown = null;
 
   while (retries < MAX_RETRIES) {
     try {
@@ -85,7 +85,7 @@ export async function getProposalSecurityAnalysis(
       }
       
       // If we've reached here, it's an unexpected error
-      throw new Error(`Failed to fetch proposal security analysis: ${lastError?.message || 'Unknown error'}`);
+      throw new Error(`Failed to fetch proposal security analysis: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

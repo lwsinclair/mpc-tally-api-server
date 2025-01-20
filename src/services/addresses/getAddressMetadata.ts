@@ -5,23 +5,23 @@ import { AddressMetadataInput, AddressMetadataResponse } from './addresses.types
 export async function getAddressMetadata(
   client: GraphQLClient,
   input: AddressMetadataInput
-): Promise<AddressMetadataResponse> {
+): Promise<Record<string, any>> {
   if (!input.address) {
     throw new Error('Address is required');
   }
 
   try {
-    const response = await client.request<{ address: AddressMetadataResponse }>(
+    const response = await client.request(
       GET_ADDRESS_METADATA_QUERY,
       { address: input.address }
     );
 
-    if (!response.address) {
+    if (!response) {
       throw new Error('Failed to fetch address metadata');
     }
 
-    return response.address;
+    return response;
   } catch (error) {
-    throw new Error(`Failed to fetch address metadata: ${error.message}`);
+    throw new Error(`Failed to fetch address metadata: ${(error as Error).message}`);
   }
 } 

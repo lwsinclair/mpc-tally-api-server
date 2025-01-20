@@ -43,9 +43,9 @@ export async function getProposalVoters(
       );
 
       // If we get a valid response with no voters, return empty array
-      if (!response.proposalVoters?.nodes) {
+      if (!response.votes?.nodes) {
         return {
-          proposalVoters: {
+          votes: {
             nodes: [],
             pageInfo: {
               firstCursor: '',
@@ -74,7 +74,7 @@ export async function getProposalVoters(
         // Handle invalid input (422) or other GraphQL errors
         if (graphqlError.response?.status === 422 || graphqlError.response?.errors) {
           return {
-            proposalVoters: {
+            votes: {
               nodes: [],
               pageInfo: {
                 firstCursor: '',

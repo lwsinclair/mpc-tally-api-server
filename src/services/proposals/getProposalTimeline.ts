@@ -16,7 +16,7 @@ export async function getProposalTimeline(
   input: GetProposalTimelineInput
 ): Promise<ProposalTimelineResponse> {
   let retries = 0;
-  let lastError: Error | null = null;
+  let lastError: unknown = null;
 
   while (retries < MAX_RETRIES) {
     try {
@@ -26,7 +26,7 @@ export async function getProposalTimeline(
         }
       };
 
-      const response = await client.request<ProposalTimelineResponse>(
+      const response = await client.request<{ proposal: Record<string, any> }>(
         GET_PROPOSAL_TIMELINE_QUERY,
         variables
       );
@@ -44,7 +44,7 @@ export async function getProposalTimeline(
         };
       }
 
-      return response;
+      return response as ProposalTimelineResponse;
     } catch (error) {
       lastError = error;
       if (error instanceof Error) {
@@ -75,7 +75,7 @@ export async function getProposalTimeline(
       }
       
       // If we've reached here, it's an unexpected error
-      throw new Error(`Failed to fetch proposal timeline: ${lastError?.message || 'Unknown error'}`);
+      throw new Error(`Failed to fetch proposal timeline: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

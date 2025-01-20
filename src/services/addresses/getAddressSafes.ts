@@ -13,7 +13,7 @@ export async function getAddressSafes(
   try {
     const accountId = `eip155:1:${input.address.toLowerCase()}`;
 
-    const response = await client.request<AddressSafesResponse>(GET_ADDRESS_SAFES_QUERY, {
+    const response = await client.request<{ account: Record<string, any> }>(GET_ADDRESS_SAFES_QUERY, {
       accountId
     });
 
@@ -25,8 +25,8 @@ export async function getAddressSafes(
       response.account.safes = [];
     }
 
-    return response;
+    return response as AddressSafesResponse;
   } catch (error) {
-    throw new Error(`Failed to fetch address safes: ${error.message}`);
+    throw new Error(`Failed to fetch address safes: ${(error as Error).message}`);
   }
 } 
