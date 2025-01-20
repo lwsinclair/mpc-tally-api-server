@@ -72,4 +72,31 @@ describe('TallyService - DAO', () => {
       expect(String(error)).toContain('Failed to fetch DAO');
     });
   });
+
+  describe('getDAOTokens', () => {
+    it('should fetch token details for a given token ID', async () => {
+      const tokenId = 'eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'; // UNI token
+      const tokens = await tallyService.getDAOTokens([tokenId]);
+      
+      expect(tokens).toBeDefined();
+      expect(Array.isArray(tokens)).toBe(true);
+      expect(tokens.length).toBe(1);
+      
+      const token = tokens[0];
+      expect(token.id).toBe(tokenId);
+      expect(token.name).toBe('Uniswap');
+      expect(token.symbol).toBe('UNI');
+      expect(token.decimals).toBe(18);
+      expect(typeof token.supply).toBe('string');
+      expect(typeof token.isIndexing).toBe('boolean');
+      expect(typeof token.isBehind).toBe('boolean');
+    }, 30000);
+
+    it('should handle empty array of token IDs', async () => {
+      const tokens = await tallyService.getDAOTokens([]);
+      expect(tokens).toBeDefined();
+      expect(Array.isArray(tokens)).toBe(true);
+      expect(tokens.length).toBe(0);
+    });
+  });
 }); 

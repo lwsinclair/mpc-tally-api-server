@@ -1,12 +1,7 @@
 import { GraphQLClient } from 'graphql-request';
-import { listDAOs } from './organizations/listDAOs.js';
 import { getDAO } from './organizations/getDAO.js';
-import { listDelegates } from './delegates/listDelegates.js';
-import { listProposals } from './proposals/listProposals.js';
-import { getProposal } from './proposals/getProposal.js';
-import { getProposalVoters } from './proposals/getProposalVoters.js';
-import { getProposalTimeline } from './proposals/getProposalTimeline.js';
-import { getProposalSecurityAnalysis } from './proposals/getProposalSecurityAnalysis.js';
+import { listDAOs } from './organizations/listDAOs.js';
+import { getDAOProposals } from './organizations/getDAOProposals.js';
 import { getAddressProposals } from './addresses/getAddressProposals.js';
 import { getAddressDAOProposals } from './addresses/getAddressDAOProposals.js';
 import { getAddressVotes } from './addresses/getAddressVotes.js';
@@ -21,6 +16,7 @@ import type {
   OrganizationsResponse,
   ListDAOsParams,
   PageInfo,
+  Token,
 } from './organizations/organizations.types.js';
 import type { Delegate } from './delegates/delegates.types.js';
 import type { Delegation, GetDelegatorsParams, TokenInfo } from './delegators/delegators.types.js';
@@ -58,6 +54,7 @@ import type {
   AddressGovernancesInput,
   AddressGovernancesResponse,
 } from './addresses/addresses.types.js';
+import { getDAOTokens } from './organizations/getDAO.js';
 
 export interface TallyServiceConfig {
   apiKey: string;
@@ -106,6 +103,10 @@ export class TallyService {
 
   async getDAO(slug: string): Promise<Organization> {
     return getDAO(this.client, slug);
+  }
+
+  async getDAOTokens(tokenIds: string[]): Promise<Token[]> {
+    return getDAOTokens(this.client, tokenIds);
   }
 
   async listDAOs(params: ListDAOsParams = {}): Promise<OrganizationsResponse> {

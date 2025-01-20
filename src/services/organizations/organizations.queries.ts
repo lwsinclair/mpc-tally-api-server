@@ -60,4 +60,19 @@ export const GET_DAO_QUERY = gql`
       }
     }
   }
+`;
+
+export const GET_TOKEN_QUERY = gql`
+  query Token($input: TokenInput!) {
+    token(input: $input) {
+      id
+      type
+      name
+      symbol
+      supply
+      decimals
+      isIndexing
+      isBehind
+    }
+  }
 `; 
