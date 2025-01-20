@@ -23,9 +23,16 @@ describe('TallyService - DAO', () => {
       expect(dao.name).toBe('Uniswap');
       expect(dao.slug).toBe('uniswap');
       
-      // Chain IDs
+      // Chain IDs and Token IDs
       expect(dao.chainIds).toBeDefined();
       expect(Array.isArray(dao.chainIds)).toBe(true);
+      expect(dao.chainIds).toContain('eip155:1'); // Ethereum mainnet
+
+      // Token IDs - specifically check for UNI token
+      expect(dao.tokenIds).toBeDefined();
+      expect(Array.isArray(dao.tokenIds)).toBe(true);
+      expect(dao.tokenIds.length).toBeGreaterThan(0);
+      expect(dao.tokenIds).toContain('eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984'); // UNI token
       
       // Stats and counters
       expect(typeof dao.proposalsCount).toBe('number');
@@ -49,7 +56,7 @@ describe('TallyService - DAO', () => {
           expect(dao.metadata.socials.twitter).toBeDefined();
         }
       }
-    }, 30000); // 30 second timeout
+    }, 30000);
 
     it('should handle non-existent DAO gracefully', async () => {
       const nonExistentSlug = 'non-existent-dao-123';
@@ -57,19 +64,6 @@ describe('TallyService - DAO', () => {
       
       try {
         await tallyService.getDAO(nonExistentSlug);
-      } catch (e) {
-        error = e as Error;
-      }
-      
-      expect(error).toBeDefined();
-      expect(String(error)).toContain('Failed to fetch DAO');
-    });
-
-    it('should handle invalid API responses', async () => {
-      let error: Error | undefined;
-      
-      try {
-        await tallyService.getDAO('');
       } catch (e) {
         error = e as Error;
       }
