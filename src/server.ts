@@ -567,7 +567,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: JSON.stringify(data, null, 2),
+              text: TallyService.formatDAOList(data.organizations.nodes),
             },
           ];
 
@@ -591,7 +591,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: JSON.stringify(data, null, 2),
+              text: TallyService.formatDAO(data),
             },
           ];
 
@@ -676,7 +676,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: JSON.stringify(data, null, 2),
+              text: TallyService.formatDelegatorsList(data.delegators),
             },
           ];
 
@@ -736,7 +736,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: JSON.stringify(data, null, 2),
+              text: TallyService.formatProposalsList(data.proposals.nodes),
             },
           ];
 
@@ -767,7 +767,7 @@ export class TallyServer {
               content: [
                 {
                   type: "text",
-                  text: JSON.stringify(data, null, 2),
+                  text: TallyService.formatProposal(data.proposal),
                 },
               ],
             };
@@ -792,7 +792,7 @@ export class TallyServer {
               content: [
                 {
                   type: "text",
-                  text: JSON.stringify(data, null, 2),
+                  text: TallyService.formatProposal(data.proposal),
                 },
               ],
             };
@@ -860,11 +860,27 @@ export class TallyServer {
             afterCursor: typeof args.afterCursor === "string" ? args.afterCursor : undefined,
           });
 
+          const proposals = result.proposals.nodes;
+          const content = proposals.map((proposal: any) => ({
+            id: proposal.id,
+            onchainId: proposal.onchainId,
+            governorId: proposal.governor?.id,
+            organizationId: proposal.governor?.organization?.id,
+            organizationName: proposal.governor?.organization?.name,
+            organizationSlug: proposal.governor?.organization?.slug,
+            description: proposal.metadata?.description,
+            status: proposal.status,
+            createdAt: proposal.createdAt,
+            blockTimestamp: proposal.block?.timestamp,
+            proposerAddress: proposal.proposer?.address,
+            creatorAddress: proposal.creator?.address,
+            startTimestamp: proposal.start?.timestamp,
+            voteStats: proposal.voteStats,
+            participationType: proposal.participationType,
+          }));
+
           return {
-            content: [{ 
-              type: "text", 
-              text: JSON.stringify(result, null, 2) 
-            }],
+            content: [{ type: "text", text: JSON.stringify(content) }],
             pageInfo: result.proposals.pageInfo,
           };
         } catch (error) {
