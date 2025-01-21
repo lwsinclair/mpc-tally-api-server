@@ -16,7 +16,7 @@ export async function getDelegators(
 
     // If organizationId is not provided but slug is, get the organization ID
     if (!organizationId && params.organizationSlug) {
-      const dao = await getDAO(client, params.organizationSlug);
+      const { organization: dao } = await getDAO(client, params.organizationSlug);
       organizationId = dao.id;
     }
 

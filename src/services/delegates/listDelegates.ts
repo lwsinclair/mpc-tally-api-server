@@ -36,7 +36,7 @@ export async function listDelegates(
 
       // Get the DAO to get its ID
       await globalRateLimiter.waitForRateLimit();
-      const dao = await getDAO(client, input.organizationSlug);
+      const { organization: dao } = await getDAO(client, input.organizationSlug);
       const organizationId = dao.id;
 
       // Wait for rate limit before making the request

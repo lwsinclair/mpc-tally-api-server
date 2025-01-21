@@ -47,6 +47,15 @@ describe('TallyService - Proposal Votes Cast', () => {
     expect(result.proposal).toBeDefined();
     expect(result.proposal.voteStats).toBeDefined();
     expect(Array.isArray(result.proposal.voteStats)).toBe(true);
+
+    // Check formatted vote amounts
+    if (result.proposal.voteStats.length > 0) {
+      const voteStat = result.proposal.voteStats[0];
+      expect(voteStat.formattedVotesCount).toBeDefined();
+      expect(voteStat.formattedVotesCount.raw).toBe(voteStat.votesCount);
+      expect(voteStat.formattedVotesCount.formatted).toBeDefined();
+      expect(voteStat.formattedVotesCount.readable).toContain(result.proposal.governor.token.symbol);
+    }
   }, testTimeout);
 
   it('should include vote statistics and quorum information', async () => {
@@ -64,6 +73,12 @@ describe('TallyService - Proposal Votes Cast', () => {
       expect(voteStat).toHaveProperty('votersCount');
       expect(voteStat).toHaveProperty('type');
       expect(voteStat).toHaveProperty('percent');
+      
+      // Check formatted vote amounts
+      expect(voteStat.formattedVotesCount).toBeDefined();
+      expect(voteStat.formattedVotesCount.raw).toBe(voteStat.votesCount);
+      expect(voteStat.formattedVotesCount.formatted).toBeDefined();
+      expect(voteStat.formattedVotesCount.readable).toContain(result.proposal.governor.token.symbol);
     }
 
     expect(result.proposal.governor).toBeDefined();

@@ -238,59 +238,129 @@ export const GET_PROPOSAL_SECURITY_ANALYSIS_QUERY = gql`
   }
 `;
 
-export const GET_PROPOSAL_VOTES_CAST_QUERY = `
-  fragment ProposalMetadataFields on Proposal {
-    metadata {
-      title
-      description
-    }
-  }
-
-  fragment VoteStatsFields on Proposal {
-    voteStats {
-      votesCount
-      votersCount
-      type
-      percent
-    }
-  }
-
-  fragment GovernorTokenFields on Governor {
-    token {
-      decimals
-      supply
-      symbol
-      name
-    }
-  }
-
-  fragment GovernorOrganizationFields on Governor {
-    organization {
-      name
-      slug
+export const GET_PROPOSAL_VOTES_CAST_QUERY = gql`
+  query ProposalVotesCast($input: ProposalInput!) {
+    proposal(input: $input) {
+      id
+      onchainId
+      status
+      quorum
+      createdAt
       metadata {
-        icon
+        title
+        description
+      }
+      voteStats {
+        votesCount
+        votersCount
+        type
+        percent
+      }
+      governor {
+        id
+        type
+        quorum
+        token {
+          decimals
+          supply
+          symbol
+          name
+        }
+        organization {
+          name
+          slug
+          metadata {
+            icon
+          }
+        }
       }
     }
   }
+`;
 
-  query ProposalVotesCast($input: ProposalInput!) {
-    proposal(input: $input) {
-      ... on Proposal {
-        id
-        onchainId
-        status
-        quorum
-        createdAt
-        ...ProposalMetadataFields
-        ...VoteStatsFields
-        governor {
+export const GET_PROPOSAL_VOTES_CAST_LIST_QUERY = gql`
+  query ProposalVotesCastList($forInput: VotesInput!, $againstInput: VotesInput!, $abstainInput: VotesInput!) {
+    forVotes: votes(input: $forInput) {
+      nodes {
+        ... on Vote {
           id
+          isBridged
+          voter {
+            name
+            picture
+            address
+            twitter
+          }
+          amount
+          reason
           type
-          quorum
-          ...GovernorTokenFields
-          ...GovernorOrganizationFields
+          chainId
+          block {
+            id
+            timestamp
+          }
         }
+      }
+      pageInfo {
+        firstCursor
+        lastCursor
+        count
+      }
+    }
+
+    againstVotes: votes(input: $againstInput) {
+      nodes {
+        ... on Vote {
+          id
+          isBridged
+          voter {
+            name
+            picture
+            address
+            twitter
+          }
+          amount
+          reason
+          type
+          chainId
+          block {
+            id
+            timestamp
+          }
+        }
+      }
+      pageInfo {
+        firstCursor
+        lastCursor
+        count
+      }
+    }
+
+    abstainVotes: votes(input: $abstainInput) {
+      nodes {
+        ... on Vote {
+          id
+          isBridged
+          voter {
+            name
+            picture
+            address
+            twitter
+          }
+          amount
+          reason
+          type
+          chainId
+          block {
+            id
+            timestamp
+          }
+        }
+      }
+      pageInfo {
+        firstCursor
+        lastCursor
+        count
       }
     }
   }

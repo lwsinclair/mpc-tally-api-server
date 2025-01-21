@@ -107,19 +107,12 @@ export async function getDelegateStatement(
       } else if ('organizationSlug' in input && input.organizationSlug) {
         // Wait for rate limit before getDAO request
         await globalRateLimiter.waitForRateLimit();
-        try {
-          const dao = await getDAO(client, input.organizationSlug);
-          if (!dao.governorIds?.length) {
-            return null;
-          }
-          governorId = dao.governorIds[0];
-          organizationId = dao.id;
-        } catch (error) {
-          if (error instanceof ResourceNotFoundError) {
-            return null;
-          }
-          throw error;
+        const { organization: dao } = await getDAO(client, input.organizationSlug);
+        if (!dao.governorIds?.length) {
+          return null;
         }
+        governorId = dao.governorIds[0];
+        organizationId = dao.id;
       }
 
       // Format the account ID for the header query

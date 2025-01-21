@@ -30,7 +30,7 @@ export async function listProposals(
 
     // If organizationSlug is provided but no organizationId, get the DAO first
     if (!apiInput.filters?.organizationId && input.organizationSlug) {
-      const dao = await getDAO(client, input.organizationSlug);
+      const { organization: dao } = await getDAO(client, input.organizationSlug);
       apiInput = {
         ...apiInput,
         filters: {

@@ -17,7 +17,7 @@ export async function getAddressDAOProposals(
     }
 
     // Get governorId from organizationSlug
-    const dao = await getDAO(client, input.organizationSlug);
+    const { organization: dao } = await getDAO(client, input.organizationSlug);
     if (!dao.governorIds?.length) {
       throw new Error('No governor IDs found for the given organization');
     }
