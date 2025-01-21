@@ -67,9 +67,16 @@ import type {
   ProposalVotesCastListResponse,
 } from './proposals/getProposalVotesCastList.types.js';
 import type {
-  GovernorsInput,
+  GovernorInput,
   GovernanceProposalsStatsResponse,
 } from './proposals/proposals.types.js';
+import type { ListProposalsParams } from './proposals/listProposals.types.js';
+import { listProposals } from './proposals/listProposals.js';
+import { getProposal } from './proposals/getProposal.js';
+import { getProposalVoters } from './proposals/getProposalVoters.js';
+import { getProposalTimeline } from './proposals/getProposalTimeline.js';
+import { getProposalSecurityAnalysis } from './proposals/getProposalSecurityAnalysis.js';
+import { listDelegates } from './delegates/listDelegates.js';
 
 export interface TallyServiceConfig {
   apiKey: string;
@@ -112,8 +119,8 @@ export class TallyService {
     });
   }
 
-  async listProposals(input: ProposalsInput & { organizationSlug?: string }): Promise<ProposalsResponse> {
-    return listProposals(this.client, input);
+  async listProposals(params: ListProposalsParams): Promise<ProposalsResponse> {
+    return listProposals(this.client, params);
   }
 
   async getDAO(slug: string): Promise<Organization> {
@@ -234,7 +241,7 @@ export class TallyService {
     return getProposalVotesCastList(this.client, input);
   }
 
-  async getGovernanceProposalsStats(input: GovernorsInput): Promise<GovernanceProposalsStatsResponse> {
+  async getGovernanceProposalsStats(input: { slug: string }): Promise<GovernanceProposalsStatsResponse> {
     return getGovernanceProposalsStats(this.client, input);
   }
 
