@@ -55,17 +55,31 @@ export interface Account {
 
 export interface Vote {
   id: string;
-  amount: string;  // Uint256 represented as string
-  block: Block;
-  chainId: string; // ChainID represented as string
+  type: string;
+  amount: string;
+  reason?: string;
   isBridged?: boolean;
+  voter: {
+    id?: string;
+    address: string;
+    name?: string;
+    ens?: string;
+    twitter?: string;
+  };
   proposal: {
     id: string;
+    metadata?: {
+      title?: string;
+      description?: string;
+    };
+    status?: string;
   };
-  reason?: string;
-  type: VoteType;  // Using our existing VoteType enum
-  txHash: string;  // Hash represented as string
-  voter: Account;
+  block: {
+    timestamp: string;
+    number: number;
+  };
+  chainId: string;
+  txHash: string;
 }
 
 export interface VotesResponse {
