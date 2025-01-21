@@ -6,6 +6,9 @@ dotenv.config();
 const testTimeout = 30000;
 let service: TallyService;
 
+// Known valid Uniswap proposal ID
+const VALID_PROPOSAL_ID = '2502358713906497413';
+
 beforeAll(() => {
   const apiKey = process.env.TALLY_API_KEY;
   if (!apiKey) {
@@ -36,10 +39,9 @@ describe('TallyService - Proposal Votes Cast', () => {
     }
   }, testTimeout);
 
-  // Skipping these tests for now due to rate limiting
-  it.skip('should fetch votes cast for a valid proposal', async () => {
+  it('should fetch votes cast for a valid proposal', async () => {
     const result = await service.getProposalVotesCast({
-      id: '97547960961171061148426760028082726569172978608563921343798378585371786665984'
+      id: VALID_PROPOSAL_ID
     });
     expect(result).toBeDefined();
     expect(result.proposal).toBeDefined();
@@ -47,9 +49,9 @@ describe('TallyService - Proposal Votes Cast', () => {
     expect(Array.isArray(result.proposal.voteStats)).toBe(true);
   }, testTimeout);
 
-  it.skip('should include vote statistics and quorum information', async () => {
+  it('should include vote statistics and quorum information', async () => {
     const result = await service.getProposalVotesCast({
-      id: '97547960961171061148426760028082726569172978608563921343798378585371786665984'
+      id: VALID_PROPOSAL_ID
     });
     
     expect(result.proposal).toBeDefined();
