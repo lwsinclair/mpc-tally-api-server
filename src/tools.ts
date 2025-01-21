@@ -545,4 +545,18 @@ export const tools: Tool[] = [
       },
     },
   },
+  {
+    name: "get-governance-proposals-stats",
+    description: "Get statistics about passed and failed proposals for a specific DAO",
+    inputSchema: {
+      type: "object",
+      required: ["slug"],
+      properties: {
+        slug: {
+          type: "string",
+          description: "The DAO's slug (e.g., 'uniswap' or 'aave')",
+        },
+      },
+    },
+  },
 ];

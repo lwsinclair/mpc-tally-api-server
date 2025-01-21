@@ -2,8 +2,8 @@ import { GraphQLClient } from 'graphql-request';
 import { getGovernanceProposalsStats } from '../proposals/getGovernanceProposalsStats.js';
 import { TallyAPIError } from '../errors/apiErrors.js';
 
-// Using Uniswap's governor ID
-const UNISWAP_GOVERNOR_ID = 'eip155:1:0x408ED6354d4973f66138C91495F2f2FCbd8724C3';
+// Using Uniswap's slug
+const UNISWAP_SLUG = 'uniswap';
 const apiKey = process.env.TALLY_API_KEY;
 
 const client = new GraphQLClient('https://api.tally.xyz/query', {
@@ -15,13 +15,13 @@ const client = new GraphQLClient('https://api.tally.xyz/query', {
 describe('getGovernanceProposalsStats', () => {
   it('should fetch proposal stats correctly', async () => {
     const result = await getGovernanceProposalsStats(client, { 
-      id: UNISWAP_GOVERNOR_ID
+      slug: UNISWAP_SLUG
     });
 
     expect(result).toBeDefined();
     expect(result.governor).toBeDefined();
-    expect(result.governor.id).toBe(UNISWAP_GOVERNOR_ID);
     expect(result.governor.chainId).toBeDefined();
+    expect(result.governor.organization.slug).toBe(UNISWAP_SLUG);
 
     const stats = result.governor.proposalStats;
     expect(stats).toBeDefined();
@@ -29,9 +29,9 @@ describe('getGovernanceProposalsStats', () => {
     expect(typeof stats.failed).toBe('number');
   });
 
-  it('should throw error for invalid governor ID', async () => {
+  it('should throw error for invalid slug', async () => {
     await expect(
-      getGovernanceProposalsStats(client, { id: 'invalid-id' })
+      getGovernanceProposalsStats(client, { slug: 'invalid-slug' })
     ).rejects.toThrow(TallyAPIError);
   });
 }); 
