@@ -2,14 +2,15 @@ import { GraphQLClient } from 'graphql-request';
 import { GET_ADDRESS_PROPOSALS_QUERY } from './addresses.queries.js';
 import type { AddressProposalsInput, AddressProposalsResponse } from './addresses.types.js';
 import { getDAO } from '../organizations/getDAO.js';
+import { globalRateLimiter } from '../../services/utils/rateLimiter.js';
 
 export async function getAddressProposals(
   client: GraphQLClient,
   input: AddressProposalsInput
 ): Promise<AddressProposalsResponse> {
   try {
-    // Get Uniswap DAO as a default context for proposals
-    const dao = await getDAO(client, 'uniswap');
+    await globalRateLimiter.waitForRateLimit();
+    const { organization: dao } = await getDAO(client, 'uniswap');
 
     const response = await client.request<AddressProposalsResponse>(GET_ADDRESS_PROPOSALS_QUERY, {
       input: {

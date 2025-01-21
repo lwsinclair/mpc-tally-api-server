@@ -1,6 +1,7 @@
 import { GraphQLClient } from 'graphql-request';
 import { GET_ADDRESS_CREATED_PROPOSALS_QUERY } from './addresses.queries.js';
 import { getDAO } from '../organizations/getDAO.js';
+import { globalRateLimiter } from '../../services/utils/rateLimiter.js';
 
 export async function getAddressCreatedProposals(
   client: GraphQLClient,
@@ -15,7 +16,8 @@ export async function getAddressCreatedProposals(
   }
 
   try {
-    const dao = await getDAO(client, input.organizationSlug);
+    await globalRateLimiter.waitForRateLimit();
+    const { organization: dao } = await getDAO(client, input.organizationSlug);
     if (!dao?.governorIds?.[0]) {
       throw new Error('No governor found for organization');
     }
