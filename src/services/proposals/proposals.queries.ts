@@ -278,6 +278,19 @@ export const GET_PROPOSAL_VOTES_CAST_QUERY = gql`
   }
 `;
 
+export const GET_GOVERNANCE_PROPOSALS_STATS_QUERY = gql`
+  query GovernanceProposalsStats($input: GovernorInput!) {
+    governor(input: $input) {
+      id
+      chainId
+      proposalStats {
+        passed
+        failed
+      }
+    }
+  }
+`;
+
 export const GET_PROPOSAL_VOTES_CAST_LIST_QUERY = gql`
   query ProposalVotesCastList($forInput: VotesInput!, $againstInput: VotesInput!, $abstainInput: VotesInput!) {
     forVotes: votes(input: $forInput) {

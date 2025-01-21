@@ -57,6 +57,7 @@ import type {
 import { getDAOTokens } from './organizations/getDAO.js';
 import { getProposalVotesCast } from './proposals/getProposalVotesCast.js';
 import { getProposalVotesCastList } from './proposals/getProposalVotesCastList.js';
+import { getGovernanceProposalsStats } from './proposals/getGovernanceProposalsStats.js';
 import type {
   GetProposalVotesCastInput,
   ProposalVotesCastResponse,
@@ -65,6 +66,10 @@ import type {
   GetProposalVotesCastListInput,
   ProposalVotesCastListResponse,
 } from './proposals/getProposalVotesCastList.types.js';
+import type {
+  GovernorsInput,
+  GovernanceProposalsStatsResponse,
+} from './proposals/proposals.types.js';
 
 export interface TallyServiceConfig {
   apiKey: string;
@@ -227,6 +232,10 @@ export class TallyService {
 
   async getProposalVotesCastList(input: GetProposalVotesCastListInput): Promise<ProposalVotesCastListResponse> {
     return getProposalVotesCastList(this.client, input);
+  }
+
+  async getGovernanceProposalsStats(input: GovernorsInput): Promise<GovernanceProposalsStatsResponse> {
+    return getGovernanceProposalsStats(this.client, input);
   }
 
   /**
