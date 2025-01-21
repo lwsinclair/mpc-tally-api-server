@@ -1,4 +1,5 @@
 import { IntID } from './listProposals.types.js';
+import { FormattedTokenAmount } from '../../utils/formatTokenAmount.js';
 
 // Input Types
 export interface GetProposalVotesCastInput {
@@ -8,6 +9,7 @@ export interface GetProposalVotesCastInput {
 // Response Types
 export interface ProposalVotesCastVoteStats {
   votesCount: string;
+  formattedVotesCount: FormattedTokenAmount;
   votersCount: number;
   type: "for" | "against" | "abstain" | "pendingfor" | "pendingagainst" | "pendingabstain";
   percent: number;
@@ -20,12 +22,14 @@ export interface ProposalVotesCastToken {
   name: string;
 }
 
+export interface ProposalVotesCastOrganizationMetadata {
+  icon: string | null;
+}
+
 export interface ProposalVotesCastOrganization {
   name: string;
   slug: string;
-  metadata: {
-    icon: string | null;
-  };
+  metadata: ProposalVotesCastOrganizationMetadata;
 }
 
 export interface ProposalVotesCastGovernor {
@@ -36,16 +40,18 @@ export interface ProposalVotesCastGovernor {
   organization: ProposalVotesCastOrganization;
 }
 
+export interface ProposalVotesCastMetadata {
+  title: string | null;
+  description: string | null;
+}
+
 export interface ProposalVotesCast {
   id: string;
   onchainId: string;
   status: "active" | "canceled" | "defeated" | "executed" | "expired" | "pending" | "queued" | "succeeded";
   quorum: string;
   createdAt: string;
-  metadata: {
-    title: string | null;
-    description: string | null;
-  };
+  metadata: ProposalVotesCastMetadata;
   voteStats: ProposalVotesCastVoteStats[];
   governor: ProposalVotesCastGovernor;
 }

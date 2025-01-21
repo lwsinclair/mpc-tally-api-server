@@ -541,6 +541,20 @@ export class TallyServer {
             }
           }
         },
+        {
+          name: "get-proposal-votes-cast",
+          description: "Get vote statistics and formatted vote counts for a specific proposal",
+          inputSchema: {
+            type: "object",
+            required: ["id"],
+            properties: {
+              id: {
+                type: "string",
+                description: "The proposal's ID"
+              }
+            }
+          }
+        },
       ];
 
       return { tools };
@@ -587,11 +601,11 @@ export class TallyServer {
             throw new Error("slug must be a string");
           }
 
-          const data = await this.service.getDAO(args.slug);
+          const { organization: dao } = await this.service.getDAO(args.slug);
           const content: TextContent[] = [
             {
               type: "text",
-              text: JSON.stringify(data, null, 2),
+              text: JSON.stringify(dao, null, 2),
             },
           ];
 
@@ -1123,6 +1137,33 @@ export class TallyServer {
         } catch (error) {
           throw new Error(
             `Error fetching proposal security analysis: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
+          );
+        }
+      }
+
+      if (name === "get-proposal-votes-cast") {
+        try {
+          if (typeof args.id !== "string") {
+            throw new Error("id must be a string");
+          }
+
+          const result = await this.service.getProposalVotesCast({
+            id: args.id
+          });
+
+          const content: TextContent[] = [
+            {
+              type: "text",
+              text: JSON.stringify(result, null, 2)
+            }
+          ];
+
+          return { content };
+        } catch (error) {
+          throw new Error(
+            `Error fetching proposal votes cast: ${
               error instanceof Error ? error.message : "Unknown error"
             }`
           );

@@ -236,4 +236,62 @@ export const GET_PROPOSAL_SECURITY_ANALYSIS_QUERY = gql`
       createdAt
     }
   }
+`;
+
+export const GET_PROPOSAL_VOTES_CAST_QUERY = `
+  fragment ProposalMetadataFields on Proposal {
+    metadata {
+      title
+      description
+    }
+  }
+
+  fragment VoteStatsFields on Proposal {
+    voteStats {
+      votesCount
+      votersCount
+      type
+      percent
+    }
+  }
+
+  fragment GovernorTokenFields on Governor {
+    token {
+      decimals
+      supply
+      symbol
+      name
+    }
+  }
+
+  fragment GovernorOrganizationFields on Governor {
+    organization {
+      name
+      slug
+      metadata {
+        icon
+      }
+    }
+  }
+
+  query ProposalVotesCast($input: ProposalInput!) {
+    proposal(input: $input) {
+      ... on Proposal {
+        id
+        onchainId
+        status
+        quorum
+        createdAt
+        ...ProposalMetadataFields
+        ...VoteStatsFields
+        governor {
+          id
+          type
+          quorum
+          ...GovernorTokenFields
+          ...GovernorOrganizationFields
+        }
+      }
+    }
+  }
 `; 

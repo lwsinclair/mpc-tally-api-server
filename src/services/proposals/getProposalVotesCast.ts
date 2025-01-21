@@ -1,46 +1,8 @@
 import { GraphQLClient } from 'graphql-request';
+import { GET_PROPOSAL_VOTES_CAST_QUERY } from './proposals.queries.js';
 import { GetProposalVotesCastInput, ProposalVotesCastResponse } from './getProposalVotesCast.types.js';
+import { formatTokenAmount } from '../../utils/formatTokenAmount.js';
 import { TallyAPIError } from '../errors/apiErrors.js';
-
-const GET_PROPOSAL_VOTES_CAST_QUERY = `
-  query ProposalVotesCast($input: ProposalInput!) {
-    proposal(input: $input) {
-      id
-      onchainId
-      status
-      quorum
-      createdAt
-      metadata {
-        title
-        description
-      }
-      voteStats {
-        votesCount
-        votersCount
-        type
-        percent
-      }
-      governor {
-        id
-        type
-        quorum
-        token {
-          decimals
-          supply
-          symbol
-          name
-        }
-        organization {
-          name
-          slug
-          metadata {
-            icon
-          }
-        }
-      }
-    }
-  }
-`;
 
 const MAX_RETRIES = 3;
 const BASE_DELAY = 1000;
@@ -64,23 +26,29 @@ export async function getProposalVotesCast(
 
   while (retries < MAX_RETRIES) {
     try {
-      const variables = {
-        input: {
-          id: input.id
-        }
-      };
-
-      const response = await client.request<ProposalVotesCastResponse>(
+      const response = await client.request<{ proposal: ProposalVotesCastResponse['proposal'] }>(
         GET_PROPOSAL_VOTES_CAST_QUERY,
-        variables
+        { input }
       );
 
-      // If we get a valid response with no proposal, return null
-      if (!response?.proposal) {
+      if (!response.proposal) {
         return { proposal: null };
       }
 
-      return response;
+      // Format vote stats with token information
+      const formattedProposal = {
+        ...response.proposal,
+        voteStats: response.proposal.voteStats.map(stat => ({
+          ...stat,
+          formattedVotesCount: formatTokenAmount(
+            stat.votesCount,
+            response.proposal.governor.token.decimals,
+            response.proposal.governor.token.symbol
+          )
+        }))
+      };
+
+      return { proposal: formattedProposal };
     } catch (error) {
       lastError = error;
       if (error instanceof Error) {
