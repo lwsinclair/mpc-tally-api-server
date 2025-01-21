@@ -53,10 +53,16 @@ export interface Account {
   twitter?: string;
 }
 
+export interface FormattedTokenAmount {
+  raw: string;
+  formatted: string;
+  readable: string;
+}
+
 export interface Vote {
   id: string;
   type: string;
-  amount: string;
+  amount: FormattedTokenAmount;
   reason?: string;
   isBridged?: boolean;
   voter: {
