@@ -1,7 +1,12 @@
 import { GraphQLClient } from 'graphql-request';
 import { getDAO } from './organizations/getDAO.js';
 import { listDAOs } from './organizations/listDAOs.js';
-import { getDAOProposals } from './organizations/getDAOProposals.js';
+import { listProposals } from './proposals/listProposals.js';
+import { getProposal } from './proposals/getProposal.js';
+import { getProposalVoters } from './proposals/getProposalVoters.js';
+import { getProposalTimeline } from './proposals/getProposalTimeline.js';
+import { getProposalSecurityAnalysis } from './proposals/getProposalSecurityAnalysis.js';
+import { listDelegates } from './delegates/listDelegates.js';
 import { getAddressProposals } from './addresses/getAddressProposals.js';
 import { getAddressDAOProposals } from './addresses/getAddressDAOProposals.js';
 import { getAddressVotes } from './addresses/getAddressVotes.js';
@@ -67,16 +72,9 @@ import type {
   ProposalVotesCastListResponse,
 } from './proposals/getProposalVotesCastList.types.js';
 import type {
-  GovernorInput,
   GovernanceProposalsStatsResponse,
 } from './proposals/proposals.types.js';
 import type { ListProposalsParams } from './proposals/listProposals.types.js';
-import { listProposals } from './proposals/listProposals.js';
-import { getProposal } from './proposals/getProposal.js';
-import { getProposalVoters } from './proposals/getProposalVoters.js';
-import { getProposalTimeline } from './proposals/getProposalTimeline.js';
-import { getProposalSecurityAnalysis } from './proposals/getProposalSecurityAnalysis.js';
-import { listDelegates } from './delegates/listDelegates.js';
 
 export interface TallyServiceConfig {
   apiKey: string;
@@ -124,7 +122,21 @@ export class TallyService {
   }
 
   async getDAO(slug: string): Promise<Organization> {
-    return getDAO(this.client, slug);
+    const { organization } = await getDAO(this.client, slug);
+    return {
+      id: organization.id,
+      name: organization.name,
+      slug: organization.slug,
+      chainIds: organization.chainIds,
+      tokenIds: organization.tokenIds,
+      governorIds: organization.governorIds,
+      tokenOwnersCount: organization.tokenOwnersCount,
+      delegatesCount: organization.delegatesCount,
+      proposalsCount: organization.proposalsCount,
+      hasActiveProposals: organization.hasActiveProposals,
+      metadata: organization.metadata,
+      delegatesVotesCount: organization.delegatesVotesCount || 0
+    };
   }
 
   async getDAOTokens(tokenIds: string[]): Promise<Token[]> {
@@ -175,7 +187,13 @@ export class TallyService {
     if (!input.address) {
       throw new Error('Address is required');
     }
-    return getAddressDAOProposals(this.client, input);
+    const response = await getAddressDAOProposals(this.client, input);
+    return {
+      proposals: {
+        nodes: response.proposals?.nodes || [],
+        pageInfo: response.proposals?.pageInfo || { firstCursor: null, lastCursor: null }
+      }
+    };
   }
 
   async getAddressVotes(input: AddressVotesInput): Promise<AddressVotesResponse> {
@@ -192,21 +210,36 @@ export class TallyService {
     if (!input.address) {
       throw new Error('address is required');
     }
-    return getAddressCreatedProposals(this.client, input);
+    const response = await getAddressCreatedProposals(this.client, input);
+    return {
+      proposals: {
+        nodes: response.proposals?.nodes || [],
+        pageInfo: response.proposals?.pageInfo || { firstCursor: null, lastCursor: null }
+      }
+    };
   }
 
-  async getAddressMetadata(input: AddressMetadataInput):Promise<Record<string, any>> {
+  async getAddressMetadata(input: AddressMetadataInput): Promise<AddressMetadataResponse> {
     if (!input.address) {
       throw new Error('Address is required');
     }
-    return getAddressMetadata(this.client, input);
+    const response = await getAddressMetadata(this.client, input);
+    return {
+      address: response.address?.address || input.address,
+      accounts: response.address?.accounts || []
+    };
   }
 
   async getAddressGovernances(input: AddressGovernancesInput): Promise<AddressGovernancesResponse> {
     if (!input.address) {
       throw new Error('Address is required');
     }
-    return getAddressGovernances(this.client, input);
+    const response = await getAddressGovernances(this.client, input);
+    return {
+      account: {
+        delegatedGovernors: response.account?.delegatedGovernors || []
+      }
+    };
   }
 
   async getAddressReceivedDelegations(input: GetAddressReceivedDelegationsInput): Promise<GetAddressReceivedDelegationsOutput> {
@@ -217,7 +250,17 @@ export class TallyService {
   }
 
   async getDelegateStatement(input: GetDelegateStatementInput): Promise<DelegateStatement | null> {
-    return getDelegateStatement(this.client, input);
+    const response = await getDelegateStatement(this.client, input);
+    if (!response?.statement) return null;
+    
+    return {
+      id: response.statement.id,
+      address: response.statement.address,
+      statement: response.statement.statement,
+      statementSummary: response.statement.statementSummary || '',
+      isSeekingDelegation: response.statement.isSeekingDelegation || false,
+      issues: response.statement.issues || []
+    };
   }
 
   async getDelegators(params: GetDelegatorsParams): Promise<{
