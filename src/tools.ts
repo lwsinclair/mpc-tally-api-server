@@ -127,22 +127,13 @@ export const tools: Tool[] = [
   },
   {
     name: "list-proposals",
-    description: "List proposals for a specific organization or governor",
+    description: "List proposals for a specific DAO or organization using its slug",
     inputSchema: {
       type: "object",
       properties: {
-        organizationId: {
+        slug: {
           type: "string",
-          description: "Filter by organization ID (large integer as string)",
-        },
-        organizationSlug: {
-          type: "string",
-          description:
-            "Filter by organization slug (e.g., 'uniswap'). Alternative to organizationId",
-        },
-        governorId: {
-          type: "string",
-          description: "Filter by governor ID",
+          description: "The slug of the DAO (e.g., 'uniswap')",
         },
         includeArchived: {
           type: "boolean",
@@ -154,8 +145,7 @@ export const tools: Tool[] = [
         },
         limit: {
           type: "number",
-          description:
-            "Maximum number of proposals to return (default: 20, max: 50)",
+          description: "Maximum number of proposals to return (default: 50, max: 50)",
         },
         afterCursor: {
           type: "string",
@@ -168,9 +158,10 @@ export const tools: Tool[] = [
         isDescending: {
           type: "boolean",
           description: "Sort in descending order (default: true)",
-        },
+        }
       },
-    },
+      required: ["slug"]
+    }
   },
   {
     name: "get-proposal",

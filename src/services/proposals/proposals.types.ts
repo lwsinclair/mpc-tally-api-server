@@ -7,6 +7,9 @@ export interface GovernorWithStats {
   id: string;
   chainId: string;
   proposalStats: ProposalStats;
+  organization: {
+    slug: string;
+  };
 }
 
 export interface GovernanceProposalsStatsResponse {
@@ -16,6 +19,7 @@ export interface GovernanceProposalsStatsResponse {
 export interface GovernorInput {
   id?: string;
   chainId?: string;
+  organizationSlug?: string;
 }
 
 export interface GovernorsInput {

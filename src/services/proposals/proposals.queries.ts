@@ -287,6 +287,9 @@ export const GET_GOVERNANCE_PROPOSALS_STATS_QUERY = gql`
         passed
         failed
       }
+      organization {
+        slug
+      }
     }
   }
 `;

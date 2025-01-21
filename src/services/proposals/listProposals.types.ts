@@ -110,4 +110,14 @@ export interface ListProposalsResponse {
       };
     };
   }>;
+}
+
+export interface ListProposalsParams {
+  slug: string;
+  includeArchived?: boolean;
+  isDraft?: boolean;
+  limit?: number;
+  afterCursor?: string;
+  beforeCursor?: string;
+  isDescending?: boolean;
 } 

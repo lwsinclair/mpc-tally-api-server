@@ -178,46 +178,33 @@ export class TallyServer {
 
       if (name === "list-proposals") {
         try {
-          const organizationId = typeof args.organizationId === "string" ? args.organizationId : undefined;
-          const organizationSlug = typeof args.organizationSlug === "string" ? args.organizationSlug : undefined;
-          const governorId = typeof args.governorId === "string" ? args.governorId : undefined;
-          const includeArchived = typeof args.includeArchived === "boolean" ? args.includeArchived : undefined;
-          const isDraft = typeof args.isDraft === "boolean" ? args.isDraft : undefined;
-          const limit = typeof args.limit === "number" ? args.limit : 20;
-          const afterCursor = typeof args.afterCursor === "string" ? args.afterCursor : undefined;
-          const beforeCursor = typeof args.beforeCursor === "string" ? args.beforeCursor : undefined;
-          const isDescending = typeof args.isDescending === "boolean" ? args.isDescending : undefined;
+          if (typeof args.slug !== "string") {
+            throw new Error("slug must be a string");
+          }
 
-          const result = await this.service.listProposals({
-            filters: {
-              organizationId,
-              governorId,
-              includeArchived,
-              isDraft,
-            },
-            organizationSlug,
-            page: {
-              limit,
-              afterCursor,
-              beforeCursor,
-            },
-            sort: isDescending ? {
-              isDescending,
-              sortBy: "id",
-            } : undefined,
+          const data = await this.service.listProposals({
+            slug: args.slug,
+            includeArchived: typeof args.includeArchived === "boolean" ? args.includeArchived : undefined,
+            isDraft: typeof args.isDraft === "boolean" ? args.isDraft : undefined,
+            limit: typeof args.limit === "number" ? args.limit : undefined,
+            afterCursor: typeof args.afterCursor === "string" ? args.afterCursor : undefined,
+            beforeCursor: typeof args.beforeCursor === "string" ? args.beforeCursor : undefined,
+            isDescending: typeof args.isDescending === "boolean" ? args.isDescending : undefined
           });
 
           const content: TextContent[] = [
             {
               type: "text",
-              text: JSON.stringify(result, null, 2),
+              text: TallyService.formatProposalsList(data.proposals.nodes),
             },
           ];
 
           return { content };
         } catch (error) {
           throw new Error(
-            `Error listing proposals: ${error instanceof Error ? error.message : "Unknown error"}`
+            `Error fetching proposals: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`
           );
         }
       }
