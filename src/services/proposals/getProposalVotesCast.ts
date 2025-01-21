@@ -5,9 +5,15 @@ import { TallyAPIError } from '../errors/apiErrors.js';
 const GET_PROPOSAL_VOTES_CAST_QUERY = `
   query ProposalVotesCast($input: ProposalInput!) {
     proposal(input: $input) {
+      id
       onchainId
       status
       quorum
+      createdAt
+      metadata {
+        title
+        description
+      }
       voteStats {
         votesCount
         votersCount
@@ -15,12 +21,22 @@ const GET_PROPOSAL_VOTES_CAST_QUERY = `
         percent
       }
       governor {
+        id
+        type
         quorum
         token {
           decimals
+          supply
+          symbol
+          name
         }
-        type
-        id
+        organization {
+          name
+          slug
+          metadata {
+            icon
+          }
+        }
       }
     }
   }

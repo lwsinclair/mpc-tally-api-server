@@ -13,19 +13,39 @@ export interface ProposalVotesCastVoteStats {
   percent: number;
 }
 
-export interface ProposalVotesCastGovernor {
-  quorum: string;
-  token: {
-    decimals: number;
+export interface ProposalVotesCastToken {
+  decimals: number;
+  supply: string;
+  symbol: string;
+  name: string;
+}
+
+export interface ProposalVotesCastOrganization {
+  name: string;
+  slug: string;
+  metadata: {
+    icon: string | null;
   };
-  type: string;
+}
+
+export interface ProposalVotesCastGovernor {
   id: string;
+  type: string;
+  quorum: string;
+  token: ProposalVotesCastToken;
+  organization: ProposalVotesCastOrganization;
 }
 
 export interface ProposalVotesCast {
+  id: string;
   onchainId: string;
   status: "active" | "canceled" | "defeated" | "executed" | "expired" | "pending" | "queued" | "succeeded";
   quorum: string;
+  createdAt: string;
+  metadata: {
+    title: string | null;
+    description: string | null;
+  };
   voteStats: ProposalVotesCastVoteStats[];
   governor: ProposalVotesCastGovernor;
 }
