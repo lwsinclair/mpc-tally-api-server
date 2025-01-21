@@ -55,6 +55,11 @@ import type {
   AddressGovernancesResponse,
 } from './addresses/addresses.types.js';
 import { getDAOTokens } from './organizations/getDAO.js';
+import { getProposalVotesCast } from './proposals/getProposalVotesCast.js';
+import type {
+  GetProposalVotesCastInput,
+  ProposalVotesCastResponse,
+} from './proposals/getProposalVotesCast.types.js';
 
 export interface TallyServiceConfig {
   apiKey: string;
@@ -206,6 +211,13 @@ export class TallyService {
       throw new Error('address is required');
     }
     return getDelegators(this.client, params);
+  }
+
+  async getProposalVotesCast(input: GetProposalVotesCastInput): Promise<ProposalVotesCastResponse> {
+    if (!input.id) {
+      throw new Error('proposalId is required');
+    }
+    return getProposalVotesCast(this.client, input);
   }
 
   /**
