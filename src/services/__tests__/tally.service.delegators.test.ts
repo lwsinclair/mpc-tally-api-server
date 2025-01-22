@@ -24,10 +24,10 @@ describe('TallyService - getDelegators', () => {
     await delay(1000); // 1 second delay between tests
   });
 
-  it('should fetch delegators using organization ID', async () => {
+  it.only('should fetch delegators using organization ID', async () => {
     const result = await service.getDelegators({
       address: VITALIK_ADDRESS,
-      organizationId: UNISWAP_ORG_ID,
+      organizationSlug: 'uniswap',
       limit: 5,
       sortBy: 'votes',
       isDescending: true

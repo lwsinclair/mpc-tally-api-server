@@ -15,6 +15,15 @@ export interface ListDelegatesInput {
   isDescending?: boolean;
 }
 
+export interface ListDelegatesParams {
+  organizationSlug: string;
+  limit?: number;
+  afterCursor?: string;
+  hasVotes?: boolean;
+  hasDelegators?: boolean;
+  isSeekingDelegation?: boolean;
+}
+
 // Response Types
 export interface Delegate {
   id: string;

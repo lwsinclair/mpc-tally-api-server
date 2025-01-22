@@ -13,30 +13,16 @@ export interface GetProposalVotersInput {
 // Response Types
 export interface ProposalVoter {
   id: string;
-  address: AccountID;
-  name?: string;
-  timestamp: string;
-  votes: string;
-  reason?: string;
-  support: 'for' | 'against' | 'abstain';
+  type: 'for' | 'against' | 'abstain';
   voter: {
-    id: string;
     address: string;
     name?: string;
-    ens?: string;
   };
-  proposal: {
-    id: string;
-    onchainId: string;
-    governor: {
-      id: string;
-      name: string;
-    };
-  };
+  amount: string;
 }
 
 export interface ProposalVotersResponse {
-  proposalVoters: {
+  votes: {
     nodes: ProposalVoter[];
     pageInfo: {
       firstCursor: string;

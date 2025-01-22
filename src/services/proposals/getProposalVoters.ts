@@ -1,6 +1,7 @@
 import { GraphQLClient } from 'graphql-request';
 import { GetProposalVotersInput, ProposalVotersResponse } from './getProposalVoters.types.js';
 import { GET_PROPOSAL_VOTERS_QUERY } from './proposals.queries.js';
+import { TallyAPIError } from '../errors/apiErrors.js';
 
 const MAX_RETRIES = 3;
 const BASE_DELAY = 1000;
@@ -15,6 +16,10 @@ export async function getProposalVoters(
   client: GraphQLClient,
   input: GetProposalVotersInput
 ): Promise<ProposalVotersResponse> {
+  if (!input.proposalId) {
+    throw new TallyAPIError('proposalId is required');
+  }
+
   let retries = 0;
   let lastError: Error | null = null;
 
@@ -43,7 +48,7 @@ export async function getProposalVoters(
       );
 
       // If we get a valid response with no voters, return empty array
-      if (!response.votes?.nodes) {
+      if (!response?.votes?.nodes) {
         return {
           votes: {
             nodes: [],
@@ -68,27 +73,19 @@ export async function getProposalVoters(
             await exponentialBackoff(retries);
             continue;
           }
-          throw new Error('Rate limit exceeded. Please try again later.');
+          throw new TallyAPIError('Rate limit exceeded. Please try again later.');
         }
 
         // Handle invalid input (422) or other GraphQL errors
         if (graphqlError.response?.status === 422 || graphqlError.response?.errors) {
-          return {
-            votes: {
-              nodes: [],
-              pageInfo: {
-                firstCursor: '',
-                lastCursor: ''
-              }
-            }
-          };
+          throw new TallyAPIError(`Invalid input: ${lastError?.message || 'Unknown error'}`);
         }
       }
       
       // If we've reached here, it's an unexpected error
-      throw new Error(`Failed to fetch proposal voters: ${lastError?.message || 'Unknown error'}`);
+      throw new TallyAPIError(`Failed to fetch proposal voters: ${lastError?.message || 'Unknown error'}`);
     }
   }
 
-  throw new Error('Maximum retries exceeded. Please try again later.');
+  throw new TallyAPIError(`Failed to fetch proposal voters after ${MAX_RETRIES} retries`);
 } 

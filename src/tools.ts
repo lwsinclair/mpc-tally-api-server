@@ -1,4 +1,5 @@
 import { type Tool } from "@modelcontextprotocol/sdk/types.js";
+import { TallyService } from "./services/tally.service.js";
 
 export const tools: Tool[] = [
   {
@@ -45,12 +46,12 @@ export const tools: Tool[] = [
       "List delegates for a specific organization with their metadata",
     inputSchema: {
       type: "object",
-      required: ["organizationIdOrSlug"],
+      required: ["organizationSlug"],
       properties: {
-        organizationIdOrSlug: {
+        organizationSlug: {
           type: "string",
           description:
-            "The organization's ID, governor ID (eip155 format), or slug (e.g., 'arbitrum', 'eip155:1:123', or numeric ID)",
+            "The organization's slug (e.g., 'arbitrum')",
         },
         limit: {
           type: "number",
@@ -81,15 +82,11 @@ export const tools: Tool[] = [
     description: "Get list of delegators for a specific address",
     inputSchema: {
       type: "object",
-      required: ["address"],
+      required: ["address", "organizationSlug"],
       properties: {
         address: {
           type: "string",
           description: "The Ethereum address to get delegators for (0x format)",
-        },
-        organizationId: {
-          type: "string",
-          description: "Filter by specific organization ID",
         },
         organizationSlug: {
           type: "string",

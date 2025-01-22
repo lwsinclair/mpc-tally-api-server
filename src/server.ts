@@ -100,23 +100,18 @@ export class TallyServer {
 
       if (name === "list-delegates") {
         try {
-          if (typeof args.organizationIdOrSlug !== "string") {
-            throw new Error("organizationIdOrSlug must be a string");
+          if (typeof args.organizationSlug !== "string") {
+            throw new Error("organizationSlug must be a string");
           }
 
-          const limit = typeof args.limit === "number" ? args.limit : 20;
-          const afterCursor = typeof args.afterCursor === "string" ? args.afterCursor : undefined;
-          const hasVotes = typeof args.hasVotes === "boolean" ? args.hasVotes : undefined;
-          const hasDelegators = typeof args.hasDelegators === "boolean" ? args.hasDelegators : undefined;
-          const isSeekingDelegation = typeof args.isSeekingDelegation === "boolean" ? args.isSeekingDelegation : undefined;
-
           const result = await this.service.listDelegates({
-            organizationIdOrSlug: args.organizationIdOrSlug,
-            limit,
-            afterCursor,
-            hasVotes,
-            hasDelegators,
-            isSeekingDelegation,
+            organizationSlug: args.organizationSlug as string,
+            limit: typeof args.limit === "number" ? args.limit : undefined,
+            afterCursor: typeof args.afterCursor === "string" ? args.afterCursor : undefined,
+            beforeCursor: typeof args.beforeCursor === "string" ? args.beforeCursor : undefined,
+            hasVotes: typeof args.hasVotes === "boolean" ? args.hasVotes : undefined,
+            hasDelegators: typeof args.hasDelegators === "boolean" ? args.hasDelegators : undefined,
+            isSeekingDelegation: typeof args.isSeekingDelegation === "boolean" ? args.isSeekingDelegation : undefined
           });
 
           const content: TextContent[] = [
@@ -195,7 +190,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: TallyService.formatProposalsList(data.proposals.nodes),
+              text: JSON.stringify(data, null, 2),
             },
           ];
 
@@ -264,7 +259,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: JSON.stringify(result),
+              text: JSON.stringify(result, null, 2),
             },
           ];
 
@@ -343,7 +338,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: JSON.stringify(result.votes.nodes),
+              text: JSON.stringify(result, null, 2),
             },
           ];
 
@@ -383,7 +378,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: JSON.stringify(result),
+              text: JSON.stringify(result, null, 2),
             },
           ];
 
@@ -426,7 +421,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: JSON.stringify(result),
+              text: JSON.stringify(result, null, 2),
             },
           ];
 
@@ -453,7 +448,7 @@ export class TallyServer {
           const content: TextContent[] = [
             {
               type: "text",
-              text: JSON.stringify(result),
+              text: JSON.stringify(result, null, 2),
             },
           ];
 
@@ -475,10 +470,15 @@ export class TallyServer {
           const result = await this.service.getProposalTimeline({
             proposalId: args.proposalId
           });
+
+          if (!result.proposal) {
+            throw new Error('Proposal not found');
+          }
+
           const content: TextContent[] = [
             {
               type: "text",
-              text: JSON.stringify(result)
+              text: JSON.stringify(result, null, 2)
             }
           ];
           return { content };
@@ -506,14 +506,30 @@ export class TallyServer {
             isDescending: typeof args.isDescending === "boolean" ? args.isDescending : undefined
           });
 
+          if (!result?.votes?.nodes) {
+            return {
+              content: [],
+              pageInfo: {
+                firstCursor: null,
+                lastCursor: null,
+              },
+            };
+          }
+
           const content: TextContent[] = [
             {
               type: "text",
-              text: JSON.stringify(result)
+              text: JSON.stringify(result, null, 2)
             }
           ];
 
-          return { content };
+          return {
+            content,
+            pageInfo: {
+              firstCursor: result.votes.pageInfo.firstCursor || null,
+              lastCursor: result.votes.pageInfo.lastCursor || null,
+            },
+          };
         } catch (error) {
           throw new Error(
             `Error fetching proposal voters: ${

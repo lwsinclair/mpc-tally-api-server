@@ -75,6 +75,7 @@ import type {
   GovernanceProposalsStatsResponse,
 } from './proposals/proposals.types.js';
 import type { ListProposalsParams } from './proposals/listProposals.types.js';
+import type { ListDelegatesParams } from './delegates/delegates.types.js';
 
 export interface TallyServiceConfig {
   apiKey: string;
@@ -147,7 +148,10 @@ export class TallyService {
     return listDAOs(this.client, params);
   }
 
-  async listDelegates(input: any) {
+  async listDelegates(input: ListDelegatesParams) {
+    if (!input.organizationSlug) {
+      throw new Error('organizationSlug must be a string');
+    }
     return listDelegates(this.client, input);
   }
 

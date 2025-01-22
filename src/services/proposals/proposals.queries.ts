@@ -136,35 +136,17 @@ export const GET_PROPOSAL_QUERY = gql`
 `;
 
 export const GET_PROPOSAL_VOTERS_QUERY = gql`
-  fragment VoterFields on Vote {
-    id
-    address
-    name
-    timestamp
-    votes
-    reason
-    support
-    voter {
-      id
-      address
-      name
-      ens
-    }
-    proposal {
-      id
-      onchainId
-      governor {
-        id
-        name
-      }
-    }
-  }
-
-  query GetProposalVoters($input: ProposalVotersInput!) {
-    proposalVoters(input: $input) {
+  query GetVotes($input: VotesInput!) {
+    votes(input: $input) {
       nodes {
         ... on Vote {
-          ...VoterFields
+          id
+          type
+          voter {
+            address
+            name
+          }
+          amount
         }
       }
       pageInfo {
