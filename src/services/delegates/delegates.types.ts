@@ -23,11 +23,17 @@ export interface Delegate {
     bio?: string;
     name?: string;
     picture?: string | null;
+    twitter?: string;
+    ens?: string;
+    otherLinks?: string[];
+    email?: string;
   };
   votesCount: string;
   delegatorsCount: number;
   statement?: {
     statementSummary?: string;
+    discourseUsername?: string;
+    discourseProfileLink?: string;
   };
 }
 
@@ -51,4 +57,27 @@ export interface ListDelegatesResponse {
       };
     };
   }>;
+}
+
+export interface DelegateStatement {
+  id: string;
+  address: string;
+  statement: string;
+  statementSummary: string;
+  isSeekingDelegation: boolean;
+  issues: Array<{
+    id: string;
+    name: string;
+  }>;
+  governor?: {
+    id: string;
+    name: string;
+    type: string;
+  };
+}
+
+export interface GetDelegateStatementInput {
+  address: string;
+  organizationSlug?: string;
+  governorId?: string;
 } 

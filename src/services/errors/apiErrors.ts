@@ -1,14 +1,21 @@
 export class TallyAPIError extends Error {
-  constructor(message: string) {
+  constructor(message: string, public readonly context?: Record<string, unknown>) {
     super(message);
     this.name = 'TallyAPIError';
   }
 }
 
 export class RateLimitError extends TallyAPIError {
-  constructor(message: string, public details?: Record<string, any>) {
-    super(message);
+  constructor(message = 'Rate limit exceeded', context?: Record<string, unknown>) {
+    super(message, context);
     this.name = 'RateLimitError';
+  }
+}
+
+export class ResourceNotFoundError extends TallyAPIError {
+  constructor(resource: string, identifier: string) {
+    super(`${resource} not found: ${identifier}`);
+    this.name = 'ResourceNotFoundError';
   }
 }
 
@@ -22,10 +29,10 @@ export class ValidationError extends TallyAPIError {
 export class GraphQLRequestError extends TallyAPIError {
   constructor(
     message: string,
-    public operation: string,
-    public variables: Record<string, any>
+    public readonly operation: string,
+    public readonly variables?: Record<string, unknown>
   ) {
-    super(message);
+    super(message, { operation, variables });
     this.name = 'GraphQLRequestError';
   }
 } 

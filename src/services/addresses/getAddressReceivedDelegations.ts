@@ -115,7 +115,7 @@ export async function getAddressReceivedDelegations(
 
       // Wait for rate limit before getDAO request
       await waitForRateLimit();
-      const dao = await getDAO(client, input.organizationSlug);
+      const { organization: dao } = await getDAO(client, input.organizationSlug);
       if (!dao.id) {
         throw new Error('Organization not found');
       }

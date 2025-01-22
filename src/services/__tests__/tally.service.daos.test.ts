@@ -36,10 +36,26 @@ describe('TallyService - DAOs List', () => {
         expect(result.organizations.nodes.length).toBeLessThanOrEqual(3);
 
         const firstDao = result.organizations.nodes[0];
+        
+        // Basic Information
         expect(firstDao).toHaveProperty('id');
         expect(firstDao).toHaveProperty('name');
         expect(firstDao).toHaveProperty('slug');
         expect(firstDao).toHaveProperty('chainIds');
+        expect(firstDao).toHaveProperty('tokenIds');
+        expect(firstDao).toHaveProperty('governorIds');
+        
+        // Metadata
+        expect(firstDao).toHaveProperty('metadata');
+        expect(firstDao.metadata).toHaveProperty('description');
+        expect(firstDao.metadata).toHaveProperty('icon');
+        
+        // Stats
+        expect(firstDao).toHaveProperty('hasActiveProposals');
+        expect(firstDao).toHaveProperty('proposalsCount');
+        expect(firstDao).toHaveProperty('delegatesCount');
+        expect(firstDao).toHaveProperty('delegatesVotesCount');
+        expect(firstDao).toHaveProperty('tokenOwnersCount');
       } catch (error) {
         if (String(error).includes('429')) {
           console.log('Rate limit hit, marking test as passed');

@@ -6,13 +6,25 @@ export const LIST_DAOS_QUERY = gql`
       nodes {
         ... on Organization {
           id
-          name
           slug
+          name
           chainIds
-          proposalsCount
+          tokenIds
+          governorIds
+          metadata {
+            description
+            icon
+            socials {
+              website
+              discord
+              twitter
+            }
+          }
           hasActiveProposals
-          tokenOwnersCount
+          proposalsCount
           delegatesCount
+          delegatesVotesCount
+          tokenOwnersCount
         }
       }
       pageInfo {
@@ -24,38 +36,43 @@ export const LIST_DAOS_QUERY = gql`
 `;
 
 export const GET_DAO_QUERY = gql`
-  query OrganizationBySlug($input: OrganizationInput!) {
+  query GetOrganization($input: OrganizationInput!) {
     organization(input: $input) {
       id
       name
       slug
       chainIds
-      governorIds
       tokenIds
-      hasActiveProposals
+      governorIds
       proposalsCount
-      delegatesCount
       tokenOwnersCount
+      delegatesCount
+      delegatesVotesCount
+      hasActiveProposals
       metadata {
         description
         icon
         socials {
           website
           discord
-          telegram
           twitter
-          discourse
-          others {
-            label
-            value
-          }
         }
-        karmaName
       }
-      features {
-        name
-        enabled
-      }
+    }
+  }
+`;
+
+export const GET_TOKEN_QUERY = gql`
+  query Token($input: TokenInput!) {
+    token(input: $input) {
+      id
+      type
+      name
+      symbol
+      supply
+      decimals
+      isIndexing
+      isBehind
     }
   }
 `; 

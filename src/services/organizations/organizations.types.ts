@@ -1,3 +1,5 @@
+import { FormattedTokenAmount } from '../../utils/formatTokenAmount.js';
+
 // Basic Types
 export type OrganizationsSortBy = "id" | "name" | "explore" | "popular";
 
@@ -37,56 +39,49 @@ export interface ListDAOsParams {
 }
 
 // Response Types
+export interface Token {
+  id: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  supply: string;  // Uint256 represented as string
+}
+
+export interface TokenWithSupply extends Token {
+  formattedSupply: FormattedTokenAmount;
+}
+
 export interface Organization {
   id: string;
-  slug: string;
   name: string;
+  slug: string;
   chainIds: string[];
-  tokenIds?: string[];
-  governorIds?: string[];
-  metadata?: {
-    description?: string;
-    icon?: string;
-    websiteUrl?: string;
-    twitter?: string;
-    discord?: string;
-    github?: string;
-    termsOfService?: string;
-    governanceUrl?: string;
-    socials?: {
-      website?: string;
-      discord?: string;
-      telegram?: string;
-      twitter?: string;
-      discourse?: string;
-      others?: Array<{
-        label: string;
-        value: string;
-      }>;
-    };
-    karmaName?: string;
-  };
-  features?: Array<{
-    name: string;
-    enabled: boolean;
-  }>;
-  hasActiveProposals: boolean;
+  tokenIds: string[];
+  governorIds: string[];
   proposalsCount: number;
-  delegatesCount: number;
   tokenOwnersCount: number;
-  stats?: {
-    proposalsCount: number;
-    activeProposalsCount: number;
-    tokenHoldersCount: number;
-    votersCount: number;
-    delegatesCount: number;
-    delegatedVotesCount: string;
+  delegatesCount: number;
+  delegatesVotesCount: number;
+  hasActiveProposals: boolean;
+  metadata: {
+    description: string;
+    icon: string;
+    socials: {
+      website: string;
+      discord: string;
+      twitter: string;
+    };
   };
+}
+
+export interface OrganizationWithTokens extends Organization {
+  tokens?: TokenWithSupply[];
 }
 
 export interface PageInfo {
   firstCursor: string | null;
   lastCursor: string | null;
+  count: number;
 }
 
 export interface OrganizationsResponse {

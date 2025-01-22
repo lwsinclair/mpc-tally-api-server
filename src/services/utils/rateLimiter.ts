@@ -1,46 +1,65 @@
-class RateLimiter {
-  private lastRequestTime: number = 0;
-  private remainingRequests: number | null = null;
-  private rateLimitResetTime: number | null = null;
-  private readonly BASE_DELAY = 1000; // 1 second between requests
+import { GraphQLResponse } from 'graphql-request';
 
-  async waitForRateLimit(): Promise<void> {
-    const now = Date.now();
-    const timeSinceLastRequest = now - this.lastRequestTime;
+export class RateLimiter {
+  private lastRequestTime = 0;
+  private remainingRequests: number | null = null;
+  private resetTime: number | null = null;
+  private readonly baseDelay: number;
+  private readonly maxDelay: number;
+
+  constructor(baseDelay = 1000, maxDelay = 5000) {
+    this.baseDelay = baseDelay;
+    this.maxDelay = maxDelay;
+  }
+
+  public updateFromHeaders(headers: Record<string, string>): void {
+    const remaining = headers['x-ratelimit-remaining'];
+    const reset = headers['x-ratelimit-reset'];
     
-    // If we have rate limit info and no remaining requests, wait until reset
-    if (this.remainingRequests === 0 && this.rateLimitResetTime) {
-      const waitTime = Math.max(0, this.rateLimitResetTime - now);
-      if (waitTime > 0) {
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-        this.remainingRequests = null;
-        this.rateLimitResetTime = null;
-        return;
-      }
+    if (remaining) {
+      this.remainingRequests = parseInt(remaining, 10);
     }
-    
-    // Always wait at least BASE_DELAY between requests
-    if (timeSinceLastRequest < this.BASE_DELAY) {
-      const waitTime = this.BASE_DELAY - timeSinceLastRequest;
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+    if (reset) {
+      this.resetTime = parseInt(reset, 10) * 1000; // Convert to milliseconds
     }
     
     this.lastRequestTime = Date.now();
   }
 
-  updateFromHeaders(headers: Record<string, string>): void {
-    if (headers['x-ratelimit-remaining']) {
-      this.remainingRequests = parseInt(headers['x-ratelimit-remaining'], 10);
+  public async waitForRateLimit(): Promise<void> {
+    const now = Date.now();
+    const timeSinceLastRequest = now - this.lastRequestTime;
+
+    // If we have rate limit information from headers
+    if (this.remainingRequests !== null && this.remainingRequests <= 0 && this.resetTime) {
+      const waitTime = this.resetTime - now;
+      if (waitTime > 0) {
+        if (process.env.NODE_ENV === 'test') {
+          console.log(`Rate limit reached. Waiting ${waitTime}ms until reset`);
+        }
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        return;
+      }
     }
-    if (headers['x-ratelimit-reset']) {
-      this.rateLimitResetTime = parseInt(headers['x-ratelimit-reset'], 10) * 1000; // Convert to milliseconds
+
+    // Fallback to basic rate limiting
+    if (timeSinceLastRequest < this.baseDelay) {
+      const waitTime = this.baseDelay - timeSinceLastRequest;
+      if (process.env.NODE_ENV === 'test') {
+        console.log(`Basic rate limit: Waiting ${waitTime}ms`);
+      }
+      await new Promise(resolve => setTimeout(resolve, waitTime));
     }
   }
 
-  async exponentialBackoff(retryCount: number): Promise<void> {
-    const delay = Math.min(this.BASE_DELAY * Math.pow(2, retryCount), 10000); // Max 10 seconds
+  public async exponentialBackoff(retryCount: number): Promise<void> {
+    const delay = Math.min(this.baseDelay * Math.pow(2, retryCount), this.maxDelay);
+    if (process.env.NODE_ENV === 'test') {
+      console.log(`Exponential backoff: Waiting ${delay}ms on retry ${retryCount}`);
+    }
     await new Promise(resolve => setTimeout(resolve, delay));
   }
 }
 
+// Create a singleton instance for use across the application
 export const globalRateLimiter = new RateLimiter(); 

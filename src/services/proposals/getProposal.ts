@@ -13,7 +13,7 @@ export async function getProposal(
 
     // If organizationSlug is provided but no organizationId, get the DAO first
     if (input.organizationSlug && !apiInput.governorId) {
-      const dao = await getDAO(client, input.organizationSlug);
+      const { organization: dao } = await getDAO(client, input.organizationSlug);
       // Use the first governor ID from the DAO
       if (dao.governorIds && dao.governorIds.length > 0) {
         apiInput.governorId = dao.governorIds[0];

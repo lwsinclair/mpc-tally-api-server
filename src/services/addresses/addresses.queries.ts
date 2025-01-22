@@ -98,11 +98,21 @@ export const GET_ADDRESS_VOTES_QUERY = gql`
           id
           type
           amount
+          reason
+          isBridged
           voter {
             address
+            name
+            ens
+            twitter
           }
           proposal {
             id
+            metadata {
+              title
+              description
+            }
+            status
           }
           block {
             timestamp

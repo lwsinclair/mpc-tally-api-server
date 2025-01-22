@@ -1,36 +1,44 @@
 import { GraphQLClient } from 'graphql-request';
 import { GET_ADDRESS_CREATED_PROPOSALS_QUERY } from './addresses.queries.js';
-import { AddressCreatedProposalsInput, AddressCreatedProposalsResponse } from './addresses.types.js';
 import { getDAO } from '../organizations/getDAO.js';
+import { globalRateLimiter } from '../../services/utils/rateLimiter.js';
 
 export async function getAddressCreatedProposals(
   client: GraphQLClient,
-  input: AddressCreatedProposalsInput
-): Promise<AddressCreatedProposalsResponse> {
+  input: { address: string; organizationSlug: string }
+): Promise<Record<string, any>> {
+  if (!input.address) {
+    throw new Error('Address is required');
+  }
+
+  if (!input.organizationSlug) {
+    throw new Error('Organization slug is required');
+  }
+
   try {
-    if (!input.address) {
-      throw new Error('address is required to fetch created proposals');
+    await globalRateLimiter.waitForRateLimit();
+    const { organization: dao } = await getDAO(client, input.organizationSlug);
+    if (!dao?.governorIds?.[0]) {
+      throw new Error('No governor found for organization');
     }
 
-    // Get Uniswap DAO as a default context for proposals
-    const dao = await getDAO(client, 'uniswap');
-
-    const response = await client.request(GET_ADDRESS_CREATED_PROPOSALS_QUERY, {
+    const response = await client.request<Record<string, any>>(GET_ADDRESS_CREATED_PROPOSALS_QUERY, {
       input: {
         filters: {
           proposer: input.address,
-          organizationId: dao.id
+          governorId: dao.governorIds[0]
         },
         page: {
-          limit: Math.min(input.limit || 20, 50),
-          afterCursor: input.afterCursor,
-          beforeCursor: input.beforeCursor
+          limit: 20
         }
       }
     });
 
     return response;
   } catch (error) {
-    throw new Error(`Failed to fetch created proposals: ${error.message}`);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to fetch proposals');
   }
 } 

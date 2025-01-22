@@ -25,25 +25,7 @@ export interface ListProposalsVariables {
   input: ProposalsInput;
 }
 
-// Response Types
-export interface ProposalVoteStats {
-  votesCount: string;
-  percent: number;
-  type: "for" | "against" | "abstain" | "pendingfor" | "pendingagainst" | "pendingabstain";
-  votersCount: number;
-}
-
-export interface ProposalMetadata {
-  description: string;
-  title: string;
-  discourseURL: string;
-  snapshotURL: string;
-}
-
-export interface TimeBlock {
-  timestamp: string;
-}
-
+// Helper Types
 export interface ExecutableCall {
   value: string;
   target: string;
@@ -52,8 +34,26 @@ export interface ExecutableCall {
   type: string;
 }
 
+export interface ProposalMetadata {
+  description: string;
+  title: string;
+  discourseURL: string | null;
+  snapshotURL: string | null;
+}
+
+export interface TimeBlock {
+  timestamp: string;
+}
+
+export interface VoteStat {
+  votesCount: string;
+  percent: number;
+  type: string;
+  votersCount: number;
+}
+
 export interface ProposalGovernor {
-  id: AccountID;
+  id: string;
   chainId: string;
   name: string;
   token: {
@@ -66,22 +66,23 @@ export interface ProposalGovernor {
 }
 
 export interface ProposalProposer {
-  address: AccountID;
+  address: string;
   name: string;
-  picture?: string;
+  picture: string | null;
 }
 
+// Main Types
 export interface Proposal {
-  id: IntID;
+  id: string;
   onchainId: string;
-  status: "active" | "canceled" | "defeated" | "executed" | "expired" | "pending" | "queued" | "succeeded";
+  status: string;
   createdAt: string;
   quorum: string;
   metadata: ProposalMetadata;
   start: TimeBlock;
   end: TimeBlock;
   executableCalls: ExecutableCall[];
-  voteStats: ProposalVoteStats[];
+  voteStats: VoteStat[];
   governor: ProposalGovernor;
   proposer: ProposalProposer;
 }
@@ -109,4 +110,14 @@ export interface ListProposalsResponse {
       };
     };
   }>;
+}
+
+export interface ListProposalsParams {
+  slug: string;
+  includeArchived?: boolean;
+  isDraft?: boolean;
+  limit?: number;
+  afterCursor?: string;
+  beforeCursor?: string;
+  isDescending?: boolean;
 } 

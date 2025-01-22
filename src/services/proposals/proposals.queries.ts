@@ -133,4 +133,251 @@ export const GET_PROPOSAL_QUERY = gql`
       }
     }
   }
+`;
+
+export const GET_PROPOSAL_VOTERS_QUERY = gql`
+  fragment VoterFields on Vote {
+    id
+    address
+    name
+    timestamp
+    votes
+    reason
+    support
+    voter {
+      id
+      address
+      name
+      ens
+    }
+    proposal {
+      id
+      onchainId
+      governor {
+        id
+        name
+      }
+    }
+  }
+
+  query GetProposalVoters($input: ProposalVotersInput!) {
+    proposalVoters(input: $input) {
+      nodes {
+        ... on Vote {
+          ...VoterFields
+        }
+      }
+      pageInfo {
+        firstCursor
+        lastCursor
+      }
+    }
+  }
+`;
+
+export const GET_PROPOSAL_TIMELINE_QUERY = gql`
+  fragment TimelineEventFields on ProposalEvent {
+    id
+    type
+    timestamp
+    data {
+      ... on ProposalCreatedEvent {
+        title
+        description
+      }
+      ... on ProposalStatusChangedEvent {
+        status
+      }
+      ... on ProposalVoteCastEvent {
+        votes
+        support
+      }
+      ... on ProposalExecutedEvent {
+        txHash
+      }
+    }
+  }
+
+  query GetProposalTimeline($input: ProposalInput!) {
+    proposal(input: $input) {
+      id
+      onchainId
+      chainId
+      status
+      events {
+        ...TimelineEventFields
+      }
+    }
+  }
+`;
+
+export const GET_PROPOSAL_SECURITY_ANALYSIS_QUERY = gql`
+  query ProposalSecurityAnalysis($proposalId: ID!) {
+    proposalSecurityCheck(proposalId: $proposalId) {
+      metadata {
+        metadata {
+          threatAnalysis {
+            actionsData {
+              events {
+                eventType
+                severity
+                description
+              }
+              result
+            }
+            proposerRisk
+          }
+        }
+        simulations {
+          publicURI
+          result
+        }
+      }
+      createdAt
+    }
+  }
+`;
+
+export const GET_PROPOSAL_VOTES_CAST_QUERY = gql`
+  query ProposalVotesCast($input: ProposalInput!) {
+    proposal(input: $input) {
+      id
+      onchainId
+      status
+      quorum
+      createdAt
+      metadata {
+        title
+        description
+      }
+      voteStats {
+        votesCount
+        votersCount
+        type
+        percent
+      }
+      governor {
+        id
+        type
+        quorum
+        token {
+          decimals
+          supply
+          symbol
+          name
+        }
+        organization {
+          name
+          slug
+          metadata {
+            icon
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const GET_GOVERNANCE_PROPOSALS_STATS_QUERY = gql`
+  query GovernanceProposalsStats($input: GovernorInput!) {
+    governor(input: $input) {
+      id
+      chainId
+      proposalStats {
+        passed
+        failed
+      }
+      organization {
+        slug
+      }
+    }
+  }
+`;
+
+export const GET_PROPOSAL_VOTES_CAST_LIST_QUERY = gql`
+  query ProposalVotesCastList($forInput: VotesInput!, $againstInput: VotesInput!, $abstainInput: VotesInput!) {
+    forVotes: votes(input: $forInput) {
+      nodes {
+        ... on Vote {
+          id
+          isBridged
+          voter {
+            name
+            picture
+            address
+            twitter
+          }
+          amount
+          reason
+          type
+          chainId
+          block {
+            id
+            timestamp
+          }
+        }
+      }
+      pageInfo {
+        firstCursor
+        lastCursor
+        count
+      }
+    }
+
+    againstVotes: votes(input: $againstInput) {
+      nodes {
+        ... on Vote {
+          id
+          isBridged
+          voter {
+            name
+            picture
+            address
+            twitter
+          }
+          amount
+          reason
+          type
+          chainId
+          block {
+            id
+            timestamp
+          }
+        }
+      }
+      pageInfo {
+        firstCursor
+        lastCursor
+        count
+      }
+    }
+
+    abstainVotes: votes(input: $abstainInput) {
+      nodes {
+        ... on Vote {
+          id
+          isBridged
+          voter {
+            name
+            picture
+            address
+            twitter
+          }
+          amount
+          reason
+          type
+          chainId
+          block {
+            id
+            timestamp
+          }
+        }
+      }
+      pageInfo {
+        firstCursor
+        lastCursor
+        count
+      }
+    }
+  }
 `; 
