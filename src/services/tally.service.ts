@@ -201,12 +201,6 @@ export class TallyService {
   }
 
   async getAddressVotes(input: AddressVotesInput): Promise<AddressVotesResponse> {
-    if (!input.address) {
-      throw new Error('address is required');
-    }
-    if (!input.organizationSlug) {
-      throw new Error('organizationSlug is required');
-    }
     return getAddressVotes(this.client, input);
   }
 

@@ -308,6 +308,7 @@ export class TallyServer {
 
       if (name === "get-address-votes") {
         try {
+          // Validate types at API boundary
           if (typeof args.address !== "string") {
             throw new Error("address must be a string");
           }
@@ -319,21 +320,8 @@ export class TallyServer {
             address: args.address,
             organizationSlug: args.organizationSlug,
             limit: typeof args.limit === "number" ? args.limit : undefined,
-            afterCursor:
-              typeof args.afterCursor === "string"
-                ? args.afterCursor
-                : undefined,
+            afterCursor: typeof args.afterCursor === "string" ? args.afterCursor : undefined,
           });
-
-          if (!result?.votes?.nodes) {
-            return {
-              content: [],
-              pageInfo: {
-                firstCursor: null,
-                lastCursor: null,
-              },
-            };
-          }
 
           const content: TextContent[] = [
             {

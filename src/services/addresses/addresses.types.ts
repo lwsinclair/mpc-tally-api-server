@@ -97,6 +97,25 @@ export interface VotesResponse {
   };
 }
 
+/**
+ * Input type for the GraphQL votes query
+ */
+export interface VotesInput {
+  filters: {
+    voter: string;
+    proposalIds: string[];
+  };
+  page: {
+    limit?: number;
+    afterCursor?: string;
+  };
+}
+
+/**
+ * Input type for the service layer getAddressVotes function.
+ * This gets transformed into VotesInput after fetching proposal IDs
+ * for the given organization.
+ */
 export interface AddressVotesInput {
   address: string;
   organizationSlug: string;

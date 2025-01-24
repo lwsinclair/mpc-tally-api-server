@@ -18,8 +18,8 @@ export async function getDAO(
     try {
       await globalRateLimiter.waitForRateLimit();
       
-      const input = { slug };
-      const response = await client.request<{ organization: Organization }>(GET_DAO_QUERY, { input });
+      const input = { input: { slug } };
+      const response = await client.request<{ organization: Organization }>(GET_DAO_QUERY, input);
       
       if (!response.organization) {
         throw new TallyAPIError(`DAO not found: ${slug}`);

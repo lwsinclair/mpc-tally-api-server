@@ -91,35 +91,32 @@ export const GET_ADDRESS_DAO_PROPOSALS_QUERY = gql`
 `;
 
 export const GET_ADDRESS_VOTES_QUERY = gql`
-  query GetAddressVotes($input: VotesInput!) {
-    votes(input: $input) {
+  query GetAddressVotes($input: ProposalsInput!, $address: Address!) {
+    proposals(input: $input) {
       nodes {
-        ... on Vote {
+        ... on Proposal {
           id
-          type
-          amount
-          reason
-          isBridged
-          voter {
-            address
-            name
-            ens
-            twitter
+          onchainId
+          status
+          createdAt
+          metadata {
+            title
+            description
           }
-          proposal {
+          participationType(address: $address)
+          voteStats {
+            votesCount
+            votersCount
+            type
+            percent
+          }
+          governor {
             id
-            metadata {
-              title
-              description
+            token {
+              decimals
+              symbol
             }
-            status
           }
-          block {
-            timestamp
-            number
-          }
-          chainId
-          txHash
         }
       }
       pageInfo {

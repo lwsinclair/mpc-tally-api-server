@@ -1,7 +1,7 @@
 import { gql } from 'graphql-request';
 
 export const LIST_PROPOSALS_QUERY = gql`
-  query GovernanceProposals($input: ProposalsInput!) {
+  query ListProposals($input: ProposalsInput!) {
     proposals(input: $input) {
       nodes {
         ... on Proposal {
