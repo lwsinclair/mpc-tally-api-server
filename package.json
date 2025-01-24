@@ -1,6 +1,6 @@
 {
   "name": "mpc-tally-api-server",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "homepage": "https://github.com/crazyrabbitLTC/mpc-tally-api-server",
   "description": "A Model Context Protocol (MCP) server for interacting with the Tally API, enabling AI agents to access DAO governance data",
   "type": "module",
