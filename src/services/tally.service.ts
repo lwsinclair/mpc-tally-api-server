@@ -1,50 +1,54 @@
-import { GraphQLClient } from 'graphql-request';
-import { getDAO } from './organizations/getDAO.js';
-import { listDAOs } from './organizations/listDAOs.js';
-import { listProposals } from './proposals/listProposals.js';
-import { getProposal } from './proposals/getProposal.js';
-import { getProposalVoters } from './proposals/getProposalVoters.js';
-import { getProposalTimeline } from './proposals/getProposalTimeline.js';
-import { getProposalSecurityAnalysis } from './proposals/getProposalSecurityAnalysis.js';
-import { listDelegates } from './delegates/listDelegates.js';
-import { getAddressProposals } from './addresses/getAddressProposals.js';
-import { getAddressDAOProposals } from './addresses/getAddressDAOProposals.js';
-import { getAddressVotes } from './addresses/getAddressVotes.js';
-import { getAddressCreatedProposals } from './addresses/getAddressCreatedProposals.js';
-import { getAddressMetadata } from './addresses/getAddressMetadata.js';
-import { getAddressGovernances } from './addresses/getAddressGovernances.js';
-import { getAddressReceivedDelegations } from './addresses/getAddressReceivedDelegations.js';
-import { getDelegateStatement } from './delegates/getDelegateStatement.js';
-import { getDelegators } from './delegators/getDelegators.js';
-import type { 
+import { GraphQLClient } from "graphql-request";
+import { getDAO } from "./organizations/getDAO.js";
+import { listDAOs } from "./organizations/listDAOs.js";
+import { listProposals } from "./proposals/listProposals.js";
+import { getProposal } from "./proposals/getProposal.js";
+import { getProposalVoters } from "./proposals/getProposalVoters.js";
+import { getProposalTimeline } from "./proposals/getProposalTimeline.js";
+import { getProposalSecurityAnalysis } from "./proposals/getProposalSecurityAnalysis.js";
+import { listDelegates } from "./delegates/listDelegates.js";
+import { getAddressProposals } from "./addresses/getAddressProposals.js";
+import { getAddressDAOProposals } from "./addresses/getAddressDAOProposals.js";
+import { getAddressVotes } from "./addresses/getAddressVotes.js";
+import { getAddressCreatedProposals } from "./addresses/getAddressCreatedProposals.js";
+import { getAddressMetadata } from "./addresses/getAddressMetadata.js";
+import { getAddressGovernances } from "./addresses/getAddressGovernances.js";
+import { getAddressReceivedDelegations } from "./addresses/getAddressReceivedDelegations.js";
+import { getDelegateStatement } from "./delegates/getDelegateStatement.js";
+import { getDelegators } from "./delegators/getDelegators.js";
+import type {
   Organization,
   OrganizationsResponse,
   ListDAOsParams,
   PageInfo,
   Token,
-} from './organizations/organizations.types.js';
-import type { Delegate } from './delegates/delegates.types.js';
-import type { Delegation, GetDelegatorsParams, TokenInfo } from './delegators/delegators.types.js';
-import type { GetAddressReceivedDelegationsInput } from './addresses/addresses.types.js';
-import type { DelegateStatement } from './delegates/delegates.types.js';
-import type { 
+} from "./organizations/organizations.types.js";
+import type { Delegate } from "./delegates/delegates.types.js";
+import type {
+  Delegation,
+  GetDelegatorsParams,
+  TokenInfo,
+} from "./delegators/delegators.types.js";
+import type { GetAddressReceivedDelegationsInput } from "./addresses/addresses.types.js";
+import type { DelegateStatement } from "./delegates/delegates.types.js";
+import type {
   ProposalsInput,
   ProposalsResponse,
   ProposalInput,
   ProposalDetailsResponse,
-} from './proposals/index.js';
+} from "./proposals/index.js";
 import type {
   GetProposalVotersInput,
   ProposalVotersResponse,
-} from './proposals/getProposalVoters.types.js';
+} from "./proposals/getProposalVoters.types.js";
 import type {
   GetProposalTimelineInput,
   ProposalTimelineResponse,
-} from './proposals/getProposalTimeline.types.js';
+} from "./proposals/getProposalTimeline.types.js";
 import type {
   GetProposalSecurityAnalysisInput,
   ProposalSecurityAnalysisResponse,
-} from './proposals/getProposalSecurityAnalysis.types.js';
+} from "./proposals/getProposalSecurityAnalysis.types.js";
 import type {
   AddressProposalsInput,
   AddressProposalsResponse,
@@ -58,24 +62,22 @@ import type {
   AddressMetadataResponse,
   AddressGovernancesInput,
   AddressGovernancesResponse,
-} from './addresses/addresses.types.js';
-import { getDAOTokens } from './organizations/getDAO.js';
-import { getProposalVotesCast } from './proposals/getProposalVotesCast.js';
-import { getProposalVotesCastList } from './proposals/getProposalVotesCastList.js';
-import { getGovernanceProposalsStats } from './proposals/getGovernanceProposalsStats.js';
+} from "./addresses/addresses.types.js";
+import { getDAOTokens } from "./organizations/getDAO.js";
+import { getProposalVotesCast } from "./proposals/getProposalVotesCast.js";
+import { getProposalVotesCastList } from "./proposals/getProposalVotesCastList.js";
+import { getGovernanceProposalsStats } from "./proposals/getGovernanceProposalsStats.js";
 import type {
   GetProposalVotesCastInput,
   ProposalVotesCastResponse,
-} from './proposals/getProposalVotesCast.types.js';
+} from "./proposals/getProposalVotesCast.types.js";
 import type {
   GetProposalVotesCastListInput,
   ProposalVotesCastListResponse,
-} from './proposals/getProposalVotesCastList.types.js';
-import type {
-  GovernanceProposalsStatsResponse,
-} from './proposals/proposals.types.js';
-import type { ListProposalsParams } from './proposals/listProposals.types.js';
-import type { ListDelegatesParams } from './delegates/delegates.types.js';
+} from "./proposals/getProposalVotesCastList.types.js";
+import type { GovernanceProposalsStatsResponse } from "./proposals/proposals.types.js";
+import type { ListProposalsParams } from "./proposals/listProposals.types.js";
+import type { ListDelegatesParams } from "./delegates/delegates.types.js";
 
 export interface TallyServiceConfig {
   apiKey: string;
@@ -110,12 +112,15 @@ export class TallyService {
   private client: GraphQLClient;
 
   constructor(config: TallyServiceConfig) {
-    this.client = new GraphQLClient(config.baseUrl || 'https://api.tally.xyz/query', {
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': config.apiKey,
-      },
-    });
+    this.client = new GraphQLClient(
+      config.baseUrl || "https://api.tally.xyz/query",
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "api-key": config.apiKey,
+        },
+      }
+    );
   }
 
   async listProposals(params: ListProposalsParams): Promise<ProposalsResponse> {
@@ -136,7 +141,7 @@ export class TallyService {
       proposalsCount: organization.proposalsCount,
       hasActiveProposals: organization.hasActiveProposals,
       metadata: organization.metadata,
-      delegatesVotesCount: organization.delegatesVotesCount || 0
+      delegatesVotesCount: organization.delegatesVotesCount || 0,
     };
   }
 
@@ -150,7 +155,7 @@ export class TallyService {
 
   async listDelegates(input: ListDelegatesParams) {
     if (!input.organizationSlug) {
-      throw new Error('organizationSlug must be a string');
+      throw new Error("organizationSlug must be a string");
     }
     return listDelegates(this.client, input);
   }
@@ -159,105 +164,125 @@ export class TallyService {
     return getProposal(this.client, input);
   }
 
-  async getProposalVoters(input: GetProposalVotersInput): Promise<ProposalVotersResponse> {
+  async getProposalVoters(
+    input: GetProposalVotersInput
+  ): Promise<ProposalVotersResponse> {
     if (!input.proposalId) {
-      throw new Error('proposalId is required');
+      throw new Error("proposalId is required");
     }
     return getProposalVoters(this.client, input);
   }
 
-  async getProposalTimeline(input: GetProposalTimelineInput): Promise<ProposalTimelineResponse> {
+  async getProposalTimeline(
+    input: GetProposalTimelineInput
+  ): Promise<ProposalTimelineResponse> {
     if (!input.proposalId) {
-      throw new Error('proposalId is required');
+      throw new Error("proposalId is required");
     }
     return getProposalTimeline(this.client, input);
   }
 
-  async getProposalSecurityAnalysis(input: GetProposalSecurityAnalysisInput): Promise<ProposalSecurityAnalysisResponse> {
+  async getProposalSecurityAnalysis(
+    input: GetProposalSecurityAnalysisInput
+  ): Promise<ProposalSecurityAnalysisResponse> {
     if (!input.proposalId) {
-      throw new Error('proposalId is required');
+      throw new Error("proposalId is required");
     }
     return getProposalSecurityAnalysis(this.client, input);
   }
 
-  async getAddressProposals(input: AddressProposalsInput): Promise<AddressProposalsResponse> {
+  async getAddressProposals(
+    input: AddressProposalsInput
+  ): Promise<AddressProposalsResponse> {
     if (!input.address) {
-      throw new Error('address is required');
+      throw new Error("address is required");
     }
     return getAddressProposals(this.client, input);
   }
 
-  async getAddressDAOProposals(input: AddressDAOProposalsInput): Promise<AddressDAOProposalsResponse> {
+  async getAddressDAOProposals(
+    input: AddressDAOProposalsInput
+  ): Promise<AddressDAOProposalsResponse> {
     if (!input.address) {
-      throw new Error('Address is required');
+      throw new Error("Address is required");
     }
     const response = await getAddressDAOProposals(this.client, input);
     return {
       proposals: {
         nodes: response.proposals?.nodes || [],
-        pageInfo: response.proposals?.pageInfo || { firstCursor: null, lastCursor: null }
-      }
+        pageInfo: response.proposals?.pageInfo || {
+          firstCursor: null,
+          lastCursor: null,
+        },
+      },
     };
   }
 
-  async getAddressVotes(input: AddressVotesInput): Promise<AddressVotesResponse> {
+  async getAddressVotes(
+    input: AddressVotesInput
+  ): Promise<AddressVotesResponse> {
     return getAddressVotes(this.client, input);
   }
 
-  async getAddressCreatedProposals(input: AddressCreatedProposalsInput): Promise<AddressCreatedProposalsResponse> {
+  async getAddressCreatedProposals(
+    input: AddressCreatedProposalsInput
+  ): Promise<AddressCreatedProposalsResponse> {
     if (!input.address) {
-      throw new Error('address is required');
+      throw new Error("address is required");
     }
     const response = await getAddressCreatedProposals(this.client, input);
     return {
       proposals: {
         nodes: response.proposals?.nodes || [],
-        pageInfo: response.proposals?.pageInfo || { firstCursor: null, lastCursor: null }
-      }
+        pageInfo: response.proposals?.pageInfo || {
+          firstCursor: null,
+          lastCursor: null,
+        },
+      },
     };
   }
 
-  async getAddressMetadata(input: AddressMetadataInput): Promise<AddressMetadataResponse> {
+  async getAddressMetadata(
+    input: AddressMetadataInput
+  ): Promise<AddressMetadataResponse> {
     if (!input.address) {
-      throw new Error('Address is required');
+      throw new Error("Address is required");
     }
     const response = await getAddressMetadata(this.client, input);
     return {
       address: response.address?.address || input.address,
-      accounts: response.address?.accounts || []
+      accounts: response.address?.accounts || [],
     };
   }
 
-  async getAddressGovernances(input: AddressGovernancesInput): Promise<AddressGovernancesResponse> {
-    if (!input.address) {
-      throw new Error('Address is required');
-    }
-    const response = await getAddressGovernances(this.client, input);
-    return {
-      account: {
-        delegatedGovernors: response.account?.delegatedGovernors || []
-      }
-    };
+  async getAddressGovernances(
+    input: AddressGovernancesInput
+  ): Promise<Record<string, any>> {
+    return await getAddressGovernances(this.client, input);
   }
 
-  async getAddressReceivedDelegations(input: GetAddressReceivedDelegationsInput): Promise<GetAddressReceivedDelegationsOutput> {
+  async getAddressReceivedDelegations(
+    input: GetAddressReceivedDelegationsInput
+  ): Promise<GetAddressReceivedDelegationsOutput> {
     if (!input.address) {
-      throw new Error('address is required');
+      throw new Error("address is required");
     }
     return getAddressReceivedDelegations(this.client, input);
   }
 
-  async getDelegateStatement(input: GetDelegateStatementInput): Promise<DelegateStatement | null> {
+  async getDelegateStatement(
+    input: GetDelegateStatementInput
+  ): Promise<DelegateStatement | null> {
     const response = await getDelegateStatement(this.client, input);
     if (!response?.statement) return null;
-    
+
     return {
       id: response.statement.id,
       address: response.statement.address,
       statement: response.statement.statement,
-      statementSummary: response.statement.statementSummary || '',
+      statementSummary: response.statement.statementSummary || "",
       isSeekingDelegation: response.statement.isSeekingDelegation || false,
-      issues: response.statement.issues || []
+      issues: response.statement.issues || [],
     };
   }
 
@@ -266,23 +291,29 @@ export class TallyService {
     pageInfo: PageInfo;
   }> {
     if (!params.address) {
-      throw new Error('address is required');
+      throw new Error("address is required");
     }
     return getDelegators(this.client, params);
   }
 
-  async getProposalVotesCast(input: GetProposalVotesCastInput): Promise<ProposalVotesCastResponse> {
+  async getProposalVotesCast(
+    input: GetProposalVotesCastInput
+  ): Promise<ProposalVotesCastResponse> {
     if (!input.id) {
-      throw new Error('proposalId is required');
+      throw new Error("proposalId is required");
     }
     return getProposalVotesCast(this.client, input);
   }
 
-  async getProposalVotesCastList(input: GetProposalVotesCastListInput): Promise<ProposalVotesCastListResponse> {
+  async getProposalVotesCastList(
+    input: GetProposalVotesCastListInput
+  ): Promise<ProposalVotesCastListResponse> {
     return getProposalVotesCastList(this.client, input);
   }
 
-  async getGovernanceProposalsStats(input: { slug: string }): Promise<GovernanceProposalsStatsResponse> {
+  async getGovernanceProposalsStats(input: {
+    slug: string;
+  }): Promise<GovernanceProposalsStatsResponse> {
     return getGovernanceProposalsStats(this.client, input);
   }
 
@@ -297,63 +328,99 @@ export class TallyService {
     const decimals = token?.decimals ?? 18;
     const denominator = BigInt(10 ** decimals);
     const formatted = (Number(val) / Number(denominator)).toLocaleString();
-    return `${formatted}${token?.symbol ? ` ${token.symbol}` : ''}`;
+    return `${formatted}${token?.symbol ? ` ${token.symbol}` : ""}`;
   }
 
   static formatDAOList(daos: Organization[]): string {
-    return `Found ${daos.length} DAOs:\n\n` + 
-      daos.map(dao => 
-        `${dao.name} (${dao.slug})\n` +
-        `Token Holders: ${dao.tokenOwnersCount}\n` +
-        `Delegates: ${dao.delegatesCount}\n` +
-        `Proposals: ${dao.proposalsCount}\n` +
-        `Active Proposals: ${dao.hasActiveProposals ? 'Yes' : 'No'}\n` +
-        `Description: ${dao.metadata?.description || 'No description available'}\n` +
-        `Website: ${dao.metadata?.socials?.website || 'N/A'}\n` +
-        `Twitter: ${dao.metadata?.socials?.twitter || 'N/A'}\n` +
-        `Discord: ${dao.metadata?.socials?.discord || 'N/A'}\n` +
-        '---'
-      ).join('\n\n');
+    return (
+      `Found ${daos.length} DAOs:\n\n` +
+      daos
+        .map(
+          (dao) =>
+            `${dao.name} (${dao.slug})\n` +
+            `Token Holders: ${dao.tokenOwnersCount}\n` +
+            `Delegates: ${dao.delegatesCount}\n` +
+            `Proposals: ${dao.proposalsCount}\n` +
+            `Active Proposals: ${dao.hasActiveProposals ? "Yes" : "No"}\n` +
+            `Description: ${
+              dao.metadata?.description || "No description available"
+            }\n` +
+            `Website: ${dao.metadata?.socials?.website || "N/A"}\n` +
+            `Twitter: ${dao.metadata?.socials?.twitter || "N/A"}\n` +
+            `Discord: ${dao.metadata?.socials?.discord || "N/A"}\n` +
+            "---"
+        )
+        .join("\n\n")
+    );
   }
 
   static formatDAO(dao: Organization): string {
-    return `${dao.name} (${dao.slug})\n` +
+    return (
+      `${dao.name} (${dao.slug})\n` +
       `Token Holders: ${dao.tokenOwnersCount}\n` +
       `Delegates: ${dao.delegatesCount}\n` +
       `Proposals: ${dao.proposalsCount}\n` +
-      `Active Proposals: ${dao.hasActiveProposals ? 'Yes' : 'No'}\n` +
-      `Description: ${dao.metadata?.description || 'No description available'}\n` +
-      `Website: ${dao.metadata?.socials?.website || 'N/A'}\n` +
-      `Twitter: ${dao.metadata?.socials?.twitter || 'N/A'}\n` +
-      `Discord: ${dao.metadata?.socials?.discord || 'N/A'}\n` +
-      `Chain IDs: ${dao.chainIds.join(', ')}\n` +
-      `Token IDs: ${dao.tokenIds?.join(', ') || 'N/A'}\n` +
-      `Governor IDs: ${dao.governorIds?.join(', ') || 'N/A'}`;
+      `Active Proposals: ${dao.hasActiveProposals ? "Yes" : "No"}\n` +
+      `Description: ${
+        dao.metadata?.description || "No description available"
+      }\n` +
+      `Website: ${dao.metadata?.socials?.website || "N/A"}\n` +
+      `Twitter: ${dao.metadata?.socials?.twitter || "N/A"}\n` +
+      `Discord: ${dao.metadata?.socials?.discord || "N/A"}\n` +
+      `Chain IDs: ${dao.chainIds.join(", ")}\n` +
+      `Token IDs: ${dao.tokenIds?.join(", ") || "N/A"}\n` +
+      `Governor IDs: ${dao.governorIds?.join(", ") || "N/A"}`
+    );
   }
 
   static formatDelegatesList(delegates: Delegate[]): string {
-    return `Found ${delegates.length} delegates:\n\n` +
-      delegates.map(delegate =>
-        `${delegate.account.name || delegate.account.address}\n` +
-        `Address: ${delegate.account.address}\n` +
-        `Votes: ${delegate.votesCount}\n` +
-        `Delegators: ${delegate.delegatorsCount}\n` +
-        `Bio: ${delegate.account.bio || 'No bio available'}\n` +
-        `Statement: ${delegate.statement?.statementSummary || 'No statement available'}\n` +
-        '---'
-      ).join('\n\n');
+    return (
+      `Found ${delegates.length} delegates:\n\n` +
+      delegates
+        .map(
+          (delegate) =>
+            `${delegate.account.name || delegate.account.address}\n` +
+            `Address: ${delegate.account.address}\n` +
+            `Votes: ${delegate.votesCount}\n` +
+            `Delegators: ${delegate.delegatorsCount}\n` +
+            `Bio: ${delegate.account.bio || "No bio available"}\n` +
+            `Statement: ${
+              delegate.statement?.statementSummary || "No statement available"
+            }\n` +
+            "---"
+        )
+        .join("\n\n")
+    );
   }
 
   static formatDelegatorsList(delegators: Delegation[]): string {
-    return `Found ${delegators.length} delegators:\n\n` +
-      delegators.map(delegation =>
-        `${delegation.delegator.name || delegation.delegator.ens || delegation.delegator.address}\n` +
-        `Address: ${delegation.delegator.address}\n` +
-        `Votes: ${TallyService.formatVotes(delegation.votes, delegation.token)}\n` +
-        `Delegated at: Block ${delegation.blockNumber} (${new Date(delegation.blockTimestamp).toLocaleString()})\n` +
-        `${delegation.token ? `Token: ${delegation.token.symbol} (${delegation.token.name})\n` : ''}` +
-        '---'
-      ).join('\n\n');
+    return (
+      `Found ${delegators.length} delegators:\n\n` +
+      delegators
+        .map(
+          (delegation) =>
+            `${
+              delegation.delegator.name ||
+              delegation.delegator.ens ||
+              delegation.delegator.address
+            }\n` +
+            `Address: ${delegation.delegator.address}\n` +
+            `Votes: ${TallyService.formatVotes(
+              delegation.votes,
+              delegation.token
+            )}\n` +
+            `Delegated at: Block ${delegation.blockNumber} (${new Date(
+              delegation.blockTimestamp
+            ).toLocaleString()})\n` +
+            `${
+              delegation.token
+                ? `Token: ${delegation.token.symbol} (${delegation.token.name})\n`
+                : ""
+            }` +
+            "---"
+        )
+        .join("\n\n")
+    );
   }
 
   static formatProposal(proposal: any): string {
@@ -364,18 +431,28 @@ Created: ${new Date(proposal.createdAt).toLocaleString()}
 Description: ${proposal.metadata.description}
 Governor: ${proposal.governor.name}
 Vote Stats:
-${proposal.voteStats.map((stat: any) => 
-  `  ${stat.type}: ${stat.percent.toFixed(2)}% (${stat.votesCount} votes from ${stat.votersCount} voters)`
-).join('\n')}`;
+${proposal.voteStats
+  .map(
+    (stat: any) =>
+      `  ${stat.type}: ${stat.percent.toFixed(2)}% (${
+        stat.votesCount
+      } votes from ${stat.votersCount} voters)`
+  )
+  .join("\n")}`;
   }
 
   static formatProposalsList(proposals: any[]): string {
-    return `Found ${proposals.length} proposals:\n\n` +
-      proposals.map(proposal =>
-        `${proposal.metadata.title}\n` +
-        `Tally ID: ${proposal.id}\n` +
-        `Status: ${proposal.status}\n` +
-        `Created: ${new Date(proposal.createdAt).toLocaleString()}\n\n`
-      ).join('');
+    return (
+      `Found ${proposals.length} proposals:\n\n` +
+      proposals
+        .map(
+          (proposal) =>
+            `${proposal.metadata.title}\n` +
+            `Tally ID: ${proposal.id}\n` +
+            `Status: ${proposal.status}\n` +
+            `Created: ${new Date(proposal.createdAt).toLocaleString()}\n\n`
+        )
+        .join("")
+    );
   }
-} 
+}

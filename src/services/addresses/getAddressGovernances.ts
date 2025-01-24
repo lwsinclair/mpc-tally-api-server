@@ -1,13 +1,15 @@
 import { GraphQLClient } from 'graphql-request';
 import { gql } from 'graphql-request';
 import { AddressGovernancesInput } from './addresses.types.js';
+import { getAddress } from 'ethers';
 
 const GET_ADDRESS_GOVERNANCES_QUERY = gql`
-  query AddressGovernancesDelegatees($input: DelegationsInput!) {
-    delegatees(input: $input) {
+  query AddressGovernances($input: DelegatesInput!) {
+    delegates(input: $input) {
       nodes {
-        ... on Delegation {
+        ... on Delegate {
           chainId
+          votesCount
           organization {
             id
             name
@@ -24,7 +26,6 @@ const GET_ADDRESS_GOVERNANCES_QUERY = gql`
             decimals
             supply
           }
-          votes
         }
       }
     }
@@ -35,9 +36,6 @@ export async function getAddressGovernances(
   client: GraphQLClient,
   input: AddressGovernancesInput
 ): Promise<Record<string, any>> {
-  if (!input.address) {
-    throw new Error('Address is required');
-  }
 
   try {
     const response = await client.request(
@@ -45,7 +43,7 @@ export async function getAddressGovernances(
       {
         input: {
           filters: {
-            address: input.address.toLowerCase()
+            address: getAddress(input.address)
           }
         }
       }
@@ -54,7 +52,7 @@ export async function getAddressGovernances(
     return response;
   } catch (error: any) {
     if (error.response?.status === 422) {
-      return { delegatees: { nodes: [] } };
+      return { delegates: { nodes: [] } };
     }
     throw new Error(`Failed to fetch address governances: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
