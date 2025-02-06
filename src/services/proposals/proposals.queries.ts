@@ -136,10 +136,10 @@ export const GET_PROPOSAL_QUERY = gql`
 `;
 
 export const GET_PROPOSAL_VOTERS_QUERY = gql`
-  query GetVotes($input: VotesInput!) {
+  query ProposalVoters($input: VotesInput!) {
     votes(input: $input) {
       nodes {
-        ... on Vote {
+        ... on OnchainVote {
           id
           type
           voter {
@@ -147,47 +147,31 @@ export const GET_PROPOSAL_VOTERS_QUERY = gql`
             name
           }
           amount
+          block {
+            timestamp
+          }
         }
       }
       pageInfo {
         firstCursor
         lastCursor
+        count
       }
     }
   }
 `;
 
 export const GET_PROPOSAL_TIMELINE_QUERY = gql`
-  fragment TimelineEventFields on ProposalEvent {
-    id
-    type
-    timestamp
-    data {
-      ... on ProposalCreatedEvent {
-        title
-        description
-      }
-      ... on ProposalStatusChangedEvent {
-        status
-      }
-      ... on ProposalVoteCastEvent {
-        votes
-        support
-      }
-      ... on ProposalExecutedEvent {
-        txHash
-      }
-    }
-  }
-
   query GetProposalTimeline($input: ProposalInput!) {
     proposal(input: $input) {
       id
       onchainId
       chainId
       status
+      createdAt
       events {
-        ...TimelineEventFields
+        type
+        createdAt
       }
     }
   }

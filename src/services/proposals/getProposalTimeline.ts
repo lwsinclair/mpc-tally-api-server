@@ -1,6 +1,7 @@
 import { GraphQLClient } from 'graphql-request';
 import { GetProposalTimelineInput, ProposalTimelineResponse } from './getProposalTimeline.types.js';
 import { GET_PROPOSAL_TIMELINE_QUERY } from './proposals.queries.js';
+import { TallyAPIError } from '../errors/apiErrors.js';
 
 const MAX_RETRIES = 3;
 const BASE_DELAY = 1000;
@@ -15,6 +16,10 @@ export async function getProposalTimeline(
   client: GraphQLClient,
   input: GetProposalTimelineInput
 ): Promise<ProposalTimelineResponse> {
+  if (!input.proposalId) {
+    throw new TallyAPIError('proposalId is required');
+  }
+
   let retries = 0;
   let lastError: unknown = null;
 
@@ -26,25 +31,21 @@ export async function getProposalTimeline(
         }
       };
 
-      const response = await client.request<{ proposal: Record<string, any> }>(
+      const response = await client.request<ProposalTimelineResponse>(
         GET_PROPOSAL_TIMELINE_QUERY,
         variables
       );
 
-      // If we get a valid response with no events, return empty array
-      if (!response.proposal?.events) {
-        return {
-          proposal: {
-            id: input.proposalId,
-            onchainId: '',
-            chainId: '',
-            status: '',
-            events: []
-          }
-        };
+      if (!response?.proposal) {
+        throw new TallyAPIError('Proposal not found');
       }
 
-      return response as ProposalTimelineResponse;
+      // Ensure events array exists
+      if (!response.proposal.events) {
+        response.proposal.events = [];
+      }
+
+      return response;
     } catch (error) {
       lastError = error;
       if (error instanceof Error) {
@@ -57,27 +58,18 @@ export async function getProposalTimeline(
             await exponentialBackoff(retries);
             continue;
           }
-          throw new Error('Rate limit exceeded. Please try again later.');
+          throw new TallyAPIError('Rate limit exceeded. Please try again later.');
         }
 
         // Handle invalid input (422) or other GraphQL errors
         if (graphqlError.response?.status === 422 || graphqlError.response?.errors) {
-          return {
-            proposal: {
-              id: input.proposalId,
-              onchainId: '',
-              chainId: '',
-              status: '',
-              events: []
-            }
-          };
+          throw new TallyAPIError(`Invalid input: ${error.message}`);
         }
       }
       
-      // If we've reached here, it's an unexpected error
-      throw new Error(`Failed to fetch proposal timeline: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new TallyAPIError(`Failed to fetch proposal timeline: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
-  throw new Error('Maximum retries exceeded. Please try again later.');
+  throw new TallyAPIError(`Failed to fetch proposal timeline after ${MAX_RETRIES} retries`);
 } 

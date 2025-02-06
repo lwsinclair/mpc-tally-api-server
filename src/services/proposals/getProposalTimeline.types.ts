@@ -6,35 +6,9 @@ export interface GetProposalTimelineInput {
 }
 
 // Response Types
-export interface ProposalCreatedEvent {
-  title: string;
-  description: string;
-}
-
-export interface ProposalStatusChangedEvent {
-  status: string;
-}
-
-export interface ProposalVoteCastEvent {
-  votes: string;
-  support: 'for' | 'against' | 'abstain';
-}
-
-export interface ProposalExecutedEvent {
-  txHash: string;
-}
-
-export type EventData = 
-  | ProposalCreatedEvent 
-  | ProposalStatusChangedEvent 
-  | ProposalVoteCastEvent 
-  | ProposalExecutedEvent;
-
 export interface ProposalEvent {
-  id: string;
   type: string;
-  timestamp: string;
-  data: EventData;
+  createdAt: string;
 }
 
 export interface ProposalTimelineResponse {
@@ -43,6 +17,7 @@ export interface ProposalTimelineResponse {
     onchainId: string;
     chainId: string;
     status: string;
+    createdAt: string;
     events: ProposalEvent[];
   };
 } 

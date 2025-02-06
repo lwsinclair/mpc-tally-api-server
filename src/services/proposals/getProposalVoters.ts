@@ -30,14 +30,14 @@ export async function getProposalVoters(
           filters: {
             proposalId: input.proposalId
           },
-          page: input.limit ? {
-            limit: input.limit,
+          page: {
+            limit: input.limit || 20,
             afterCursor: input.afterCursor,
             beforeCursor: input.beforeCursor
-          } : undefined,
+          },
           sort: input.sortBy ? {
             field: input.sortBy,
-            isDescending: input.isDescending ?? false
+            isDescending: input.isDescending ?? true
           } : undefined
         }
       };
@@ -47,14 +47,14 @@ export async function getProposalVoters(
         variables
       );
 
-      // If we get a valid response with no voters, return empty array
       if (!response?.votes?.nodes) {
         return {
           votes: {
             nodes: [],
             pageInfo: {
               firstCursor: '',
-              lastCursor: ''
+              lastCursor: '',
+              count: 0
             }
           }
         };
@@ -82,7 +82,6 @@ export async function getProposalVoters(
         }
       }
       
-      // If we've reached here, it's an unexpected error
       throw new TallyAPIError(`Failed to fetch proposal voters: ${lastError?.message || 'Unknown error'}`);
     }
   }
