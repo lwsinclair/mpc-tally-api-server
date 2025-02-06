@@ -28,7 +28,7 @@ export async function getProposalVoters(
       const variables = {
         input: {
           filters: {
-            proposalId: input.proposalId
+            proposalId: input.proposalId.toString()
           },
           page: {
             limit: input.limit || 20,
@@ -36,7 +36,7 @@ export async function getProposalVoters(
             beforeCursor: input.beforeCursor
           },
           sort: input.sortBy ? {
-            field: input.sortBy,
+            sortBy: input.sortBy,
             isDescending: input.isDescending ?? true
           } : undefined
         }

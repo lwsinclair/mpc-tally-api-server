@@ -1,4 +1,5 @@
 import { type Tool } from "@modelcontextprotocol/sdk/types.js";
+import { type TextContent } from "@modelcontextprotocol/sdk/types.js";
 import { TallyService } from "./services/tally.service.js";
 
 export const tools: Tool[] = [
@@ -463,12 +464,12 @@ export const tools: Tool[] = [
         },
         sortBy: {
           type: "string",
-          enum: ["votes", "timestamp"],
-          description: "How to sort the voters",
+          enum: ["id", "amount"],
+          description: "How to sort the voters ('id' sorts by date (default), 'amount' sorts by voting power)",
         },
         isDescending: {
           type: "boolean",
-          description: "Sort in descending order",
+          description: "Sort in descending order (true shows most recent/largest first)",
         },
       },
     },
